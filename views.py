@@ -1,12 +1,14 @@
-"""Quant-View Optimizer — Tab views v2.0
+"""Quant-View Optimizer — Tab views v2.1
 Rendering functions for each tab. Imported by app.py.
 """
+from datetime import datetime, timedelta
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-# ── Design tokens (kept in sync with app.py) ──────────────────────────────────
+# ── Design tokens ──────────────────────────────────────────────────────────────
 BG     = "#020c18"
 PANEL  = "#040f20"
 BORDER = "#1e3a5f"
@@ -75,16 +77,24 @@ def landing(msg: str) -> None:
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 1 · OPTIMIZER
 # ═══════════════════════════════════════════════════════════════════════════════
-def render_optimizer(r: dict, strategy_label: str) -> None:
+def render_optimizer(
+    r: dict,
+    strategy_label: str,
+    company_names: dict | None = None,
+) -> None:
     weights = {k: v for k, v in r["weights"].items() if v > 0.0001}
     active  = len(weights)
     zeroed  = len(r["weights"]) - active
 
-    rm = "CAPM" if r.get("returns_model") == "capm" else "MEAN HIST."
+    rm_map = {"mean_historical": "MEAN HIST.", "capm": "CAPM", "black_litterman": "BLACK-LITTERMAN"}
+    rm = rm_map.get(r.get("returns_model", "mean_historical"), "MEAN HIST.")
+    ccy = r.get("base_currency", "USD")
+
     st.markdown(
         f"<div class='qv-status'>"
         f"<span>STRATEGY: <b class='ok'>{strategy_label.upper()}</b></span>"
         f"<span>RETURNS: <b style='color:{TEXT};'>{rm}</b></span>"
+        f"<span>CURRENCY: <b style='color:{TEXT};'>{ccy}</b></span>"
         f"<span>ACTIVE: <b class='ok'>{active}</b></span>"
         f"<span>ZEROED OUT: <b class='warn'>{zeroed}</b></span>"
         f"<span>RFR: <b style='color:{TEXT};'>{r['rfr']:.1%}</b></span>"
@@ -125,11 +135,15 @@ def render_optimizer(r: dict, strategy_label: str) -> None:
 
     with col_t:
         st.markdown("### POSITION BREAKDOWN")
-        df = pd.DataFrame([
-            {"Ticker": t, "Weight": f"{w:.2%}",
-             "Wtd. Return": f"{r['expected_return'] * w:.2%}"}
-            for t, w in sorted(weights.items(), key=lambda x: -x[1])
-        ])
+        rows = []
+        for t, w in sorted(weights.items(), key=lambda x: -x[1]):
+            row: dict = {"Ticker": t}
+            if company_names:
+                row["Company"] = company_names.get(t, "—")
+            row["Weight"] = f"{w:.2%}"
+            row["Wtd. Return"] = f"{r['expected_return'] * w:.2%}"
+            rows.append(row)
+        df = pd.DataFrame(rows)
         st.dataframe(df, use_container_width=True, hide_index=True, height=300)
         st.markdown(
             f"<div style='color:#6b7a8d;font-size:.62rem;line-height:2;margin-top:8px;'>"
@@ -154,7 +168,7 @@ def render_optimizer(r: dict, strategy_label: str) -> None:
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 2 · ANALYTICS
 # ═══════════════════════════════════════════════════════════════════════════════
-def render_analytics(r: dict, ef_fn, stats_fn) -> None:
+def render_analytics(r: dict, ef_fn, stats_fn, mc_fn=None) -> None:
     prices  = r["prices"]
     weights = {k: v for k, v in r["weights"].items() if v > 0.0001}
     rfr_v   = r["rfr"]
@@ -263,6 +277,79 @@ def render_analytics(r: dict, ef_fn, stats_fn) -> None:
     )
     st.plotly_chart(fig3, use_container_width=True)
 
+    # ── Monte Carlo ────────────────────────────────────────────────────────────
+    if mc_fn is not None:
+        st.markdown("---")
+        st.markdown("### MONTE CARLO FORWARD SIMULATION")
+        mc_c1, mc_c2, _ = st.columns([1, 1, 4])
+        with mc_c1:
+            horizon = st.selectbox(
+                "Horizon", [1, 3, 5, 10], index=1,
+                format_func=lambda x: f"{x}Y", key="mc_horizon",
+            )
+        with mc_c2:
+            n_sims = st.selectbox("Simulations", [500, 1000, 5000], index=1, key="mc_n")
+
+        with st.spinner("Running Monte Carlo simulation..."):
+            mc = mc_fn(prices, tuple(sorted(weights.items())), horizon, n_sims)
+
+        today = datetime.today()
+        x_dates = [today + timedelta(days=int(d * 365 / 252))
+                   for d in range(mc["trading_days"] + 1)]
+
+        fig_mc = go.Figure()
+        fig_mc.add_trace(go.Scatter(
+            x=x_dates + x_dates[::-1],
+            y=list(mc["p90"]) + list(mc["p10"])[::-1],
+            fill="toself", fillcolor="rgba(245,166,35,0.07)",
+            line=dict(color="rgba(0,0,0,0)"),
+            name="P10–P90 Range", hoverinfo="skip",
+        ))
+        fig_mc.add_trace(go.Scatter(
+            x=x_dates + x_dates[::-1],
+            y=list(mc["p75"]) + list(mc["p25"])[::-1],
+            fill="toself", fillcolor="rgba(245,166,35,0.18)",
+            line=dict(color="rgba(0,0,0,0)"),
+            name="P25–P75 Range", hoverinfo="skip",
+        ))
+        fig_mc.add_trace(go.Scatter(
+            x=x_dates, y=mc["p50"], mode="lines", name="Median (P50)",
+            line=dict(color=ACCENT, width=2.5),
+            hovertemplate="<b>Median</b><br>%{x|%b %Y}: %{y:.1f}<extra></extra>",
+        ))
+        fig_mc.add_trace(go.Scatter(
+            x=x_dates, y=mc["p10"], mode="lines", name="P10 — Pessimistic",
+            line=dict(color=RED, width=1.5, dash="dot"),
+            hovertemplate="P10: %{y:.1f}<extra></extra>",
+        ))
+        fig_mc.add_trace(go.Scatter(
+            x=x_dates, y=mc["p90"], mode="lines", name="P90 — Optimistic",
+            line=dict(color=GREEN, width=1.5, dash="dot"),
+            hovertemplate="P90: %{y:.1f}<extra></extra>",
+        ))
+        fig_mc.update_layout(
+            **_pl(height=400, xaxis_title="Date",
+                  yaxis_title="Portfolio Value (indexed to 100)",
+                  hovermode="x unified"),
+            title=dict(
+                text=f"MONTE CARLO — {n_sims:,} BOOTSTRAPPED SIMULATIONS · {horizon}Y HORIZON",
+                font=dict(size=10, color=ACCENT), x=0.0,
+            ),
+        )
+        st.plotly_chart(fig_mc, use_container_width=True)
+
+        mc1, mc2, mc3, mc4 = st.columns(4)
+        final_p10 = mc["p10"][-1] / 100 - 1
+        final_p50 = mc["p50"][-1] / 100 - 1
+        final_p90 = mc["p90"][-1] / 100 - 1
+        prob_pos = float(np.mean(
+            [mc["p50"][-1]] * n_sims  # approximation using percentile bands
+        ) > 100)
+        mc1.metric(f"P10 ({horizon}Y)", f"{final_p10:.2%}", help="Pessimistic: 10% of runs ended below this")
+        mc2.metric(f"Median ({horizon}Y)", f"{final_p50:.2%}", help="Middle outcome")
+        mc3.metric(f"P90 ({horizon}Y)", f"{final_p90:.2%}", help="Optimistic: 90% of runs ended below this")
+        mc4.metric("Return Range", f"{final_p10:.1%} → {final_p90:.1%}")
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 3 · BACKTEST
@@ -313,9 +400,10 @@ def render_backtest(r: dict, bt_fn) -> None:
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 4 · HOLDINGS
 # ═══════════════════════════════════════════════════════════════════════════════
-def render_holdings(r: dict, stats_fn) -> None:
+def render_holdings(r: dict, stats_fn, rb_fn=None) -> None:
     prices = r["prices"]
     rfr_v  = r["rfr"]
+    weights = {k: v for k, v in r["weights"].items() if v > 0.0001}
 
     with st.spinner("Computing asset statistics..."):
         stats = stats_fn(prices, rfr_v)
@@ -364,3 +452,53 @@ def render_holdings(r: dict, stats_fn) -> None:
         "DASHED LINE AT SHARPE = 1.0 (STRONG RISK-ADJUSTED RETURN THRESHOLD)</div>",
         unsafe_allow_html=True,
     )
+
+    # ── Rebalancing Drift ──────────────────────────────────────────────────────
+    if rb_fn is not None:
+        st.markdown("---")
+        st.markdown("### REBALANCING DRIFT — 1-YEAR LOOKBACK")
+        st.markdown(
+            "<div style='color:#6b7a8d;font-size:.65rem;margin-bottom:8px;'>"
+            "Shows how your target weights have drifted due to price movements over the "
+            "past year. Green = underweight (BUY). Red = overweight (SELL).</div>",
+            unsafe_allow_html=True,
+        )
+
+        drift_df = rb_fn(prices, tuple(sorted(weights.items())))
+
+        if not drift_df.empty:
+            drift_colors_bar = [
+                RED if drift_df.loc[t, "Action"] == "SELL"
+                else GREEN if drift_df.loc[t, "Action"] == "BUY"
+                else ACCENT
+                for t in drift_df.index
+            ]
+
+            fig_drift = go.Figure(go.Bar(
+                x=drift_df.index.tolist(),
+                y=drift_df["Drift"].values,
+                marker_color=drift_colors_bar,
+                text=[f"{v:+.2%}" for v in drift_df["Drift"].values],
+                textposition="outside", textfont=dict(size=9, color=TEXT),
+                hovertemplate=(
+                    "<b>%{x}</b><br>"
+                    "Target: " + drift_df["Target %"].map(lambda x: f"{x:.2%}") + "<br>"
+                    "Current: " + drift_df["Current %"].map(lambda x: f"{x:.2%}") + "<br>"
+                    "Drift: %{y:.2%}<br>"
+                    "Action: " + drift_df["Action"] +
+                    "<extra></extra>"
+                ),
+            ))
+            fig_drift.add_hline(y=0, line_color=ACCENT, line_width=1)
+            fig_drift.update_layout(
+                **_pl(height=280, yaxis_title="Weight Drift"),
+                yaxis=dict(**_PL_BASE["yaxis"], tickformat=".1%"),
+            )
+            st.plotly_chart(fig_drift, use_container_width=True)
+
+            # Table
+            tbl = drift_df.copy()
+            tbl["Target %"]  = tbl["Target %"].map(lambda x: f"{x:.2%}")
+            tbl["Current %"] = tbl["Current %"].map(lambda x: f"{x:.2%}")
+            tbl["Drift"]     = tbl["Drift"].map(lambda x: f"{x:+.2%}")
+            st.dataframe(tbl, use_container_width=True)

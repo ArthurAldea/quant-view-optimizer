@@ -1,4 +1,4 @@
-"""Quant-View Optimizer — Core Engine v2.0
+"""Quant-View Optimizer — Core Engine v2.1
 Portfolio optimization, analytics, and backtesting using PyPortfolioOpt.
 """
 import numpy as np
@@ -6,6 +6,8 @@ import pandas as pd
 import yfinance as yf
 from pypfopt import EfficientFrontier, expected_returns
 from pypfopt.risk_models import CovarianceShrinkage
+from pypfopt import black_litterman as bl_utils
+from pypfopt.black_litterman import BlackLittermanModel
 
 RISK_FREE_RATE = 0.04   # 4.0% — 2026 default
 LOOKBACK_YEARS = 3
@@ -19,10 +21,17 @@ STRATEGIES = {
 RETURN_MODELS = {
     "Mean Historical":    "mean_historical",
     "CAPM (Market-Adj.)": "capm",
+    "Black-Litterman":    "black_litterman",
 }
 
+CURRENCIES = ["USD", "EUR", "GBP", "JPY", "CAD", "AUD", "CHF"]
 
-def fetch_prices(tickers: list[str], lookback_years: int = LOOKBACK_YEARS) -> pd.DataFrame:
+
+def fetch_prices(
+    tickers: list[str],
+    lookback_years: int = LOOKBACK_YEARS,
+    base_currency: str = "USD",
+) -> pd.DataFrame:
     """Download adjusted close prices. Drops all-NaN ticker columns; never drops rows."""
     end = pd.Timestamp.today()
     start = end - pd.DateOffset(years=lookback_years)
@@ -35,7 +44,35 @@ def fetch_prices(tickers: list[str], lookback_years: int = LOOKBACK_YEARS) -> pd
     dropped = set(tickers) - set(prices.columns)
     if dropped:
         print(f"[warning] Dropped tickers with no data: {dropped}")
+
+    if base_currency != "USD":
+        try:
+            fx_pair = f"USD{base_currency}=X"
+            fx_raw = yf.download(fx_pair, start=start, end=end, auto_adjust=True, progress=False)
+            if isinstance(fx_raw.columns, pd.MultiIndex):
+                fx = fx_raw["Close"].iloc[:, 0]
+            elif "Close" in fx_raw.columns:
+                fx = fx_raw["Close"]
+            else:
+                fx = fx_raw.iloc[:, 0]
+            fx = fx.reindex(prices.index).ffill().bfill()
+            prices = prices.multiply(fx, axis=0)
+        except Exception as exc:
+            print(f"[FX conversion failed for {base_currency}: {exc}]")
+
     return prices
+
+
+def get_company_names(tickers: list[str]) -> dict[str, str]:
+    """Fetch company short names via yfinance. Falls back to ticker symbol on error."""
+    names: dict[str, str] = {}
+    for t in tickers:
+        try:
+            info = yf.Ticker(t).info
+            names[t] = info.get("shortName") or info.get("longName") or t
+        except Exception:
+            names[t] = t
+    return names
 
 
 def _compute_mu(
@@ -45,7 +82,7 @@ def _compute_mu(
     lookback_years: int,
 ) -> tuple[pd.Series, pd.DataFrame]:
     """Return (expected_returns_series, prices_used_for_opt).
-    Falls back to mean_historical if CAPM data unavailable."""
+    Falls back to mean_historical if preferred model data is unavailable."""
     if model == "capm":
         try:
             mkt_raw = fetch_prices(["SPY"], lookback_years)
@@ -61,6 +98,40 @@ def _compute_mu(
             return mu, p_aligned
         except Exception as exc:
             print(f"[CAPM fallback → mean_historical: {exc}]")
+
+    elif model == "black_litterman":
+        try:
+            mcaps: dict[str, float] = {}
+            for t in prices.columns:
+                try:
+                    mc = yf.Ticker(t).fast_info.market_cap
+                    if mc and float(mc) > 0:
+                        mcaps[t] = float(mc)
+                except Exception:
+                    pass
+            if len(mcaps) < 2:
+                raise ValueError("Insufficient market cap data for BL")
+
+            spy_raw = fetch_prices(["SPY"], lookback_years)
+            spy_prices = spy_raw.iloc[:, 0]
+            valid_tks = [t for t in prices.columns if t in mcaps]
+            p_bl = prices[valid_tks]
+            common = p_bl.index.intersection(spy_prices.index)
+            if len(common) < 100:
+                raise ValueError("Insufficient overlap for BL")
+            p_bl = p_bl.loc[common]
+            spy_aligned = spy_prices.loc[common]
+
+            S_bl = CovarianceShrinkage(p_bl).ledoit_wolf()
+            delta = bl_utils.market_implied_risk_aversion(spy_aligned, risk_free_rate=rfr)
+            mcaps_valid = {t: mcaps[t] for t in valid_tks}
+            prior = bl_utils.market_implied_prior_returns(mcaps_valid, delta, S_bl)
+            blm = BlackLittermanModel(S_bl, pi=prior)
+            mu = blm.bl_returns()
+            return mu, p_bl
+        except Exception as exc:
+            print(f"[BL fallback → mean_historical: {exc}]")
+
     return expected_returns.mean_historical_return(prices), prices
 
 
@@ -97,9 +168,10 @@ def optimise(
     weight_min: float = 0.0,
     weight_max: float = 1.0,
     returns_model: str = "mean_historical",
+    base_currency: str = "USD",
 ) -> dict:
     """Run portfolio optimisation. Returns weights, performance metrics, and raw prices."""
-    prices = fetch_prices(tickers, lookback_years)
+    prices = fetch_prices(tickers, lookback_years, base_currency)
     if prices.shape[1] < 2:
         raise ValueError("Need at least 2 tickers with valid data to optimise.")
 
@@ -107,7 +179,6 @@ def optimise(
     S = CovarianceShrinkage(prices_opt).ledoit_wolf()
 
     ef = EfficientFrontier(mu, S, weight_bounds=(weight_min, weight_max))
-
     if strategy == "max_sharpe":
         ef.max_sharpe(risk_free_rate=rfr)
     elif strategy == "min_volatility":
@@ -120,7 +191,6 @@ def optimise(
     weights = ef.clean_weights()
     exp_ret, ann_vol, sharpe = ef.portfolio_performance(risk_free_rate=rfr)
 
-    # Portfolio max drawdown (use full price history for chart accuracy)
     rets = prices.pct_change().dropna()
     w_arr = np.array([weights.get(t, 0.0) for t in rets.columns])
     p_rets = rets.values @ w_arr
@@ -134,11 +204,12 @@ def optimise(
         "annual_volatility": float(ann_vol),
         "sharpe_ratio": float(sharpe),
         "max_drawdown": max_dd,
-        "prices": prices,       # full history for charts/backtest
+        "prices": prices,
         "strategy": strategy,
         "rfr": rfr,
         "lookback": lookback_years,
         "returns_model": returns_model,
+        "base_currency": base_currency,
     }
 
 
@@ -213,6 +284,64 @@ def backtest(
         pass
 
     return pd.concat(frames, axis=1)
+
+
+def monte_carlo(
+    prices: pd.DataFrame,
+    weights: dict,
+    horizon_years: int = 3,
+    n_sims: int = 1000,
+) -> dict:
+    """Bootstrap Monte Carlo simulation. Returns percentile paths indexed to 100."""
+    rets = prices.pct_change().dropna()
+    w_arr = np.array([weights.get(t, 0.0) for t in rets.columns])
+    p_rets = rets.values @ w_arr
+
+    trading_days = int(horizon_years * 252)
+    rng = np.random.default_rng(42)
+
+    paths = np.ones((n_sims, trading_days + 1)) * 100
+    for i in range(n_sims):
+        samples = rng.choice(p_rets, size=trading_days, replace=True)
+        paths[i, 1:] = 100 * np.cumprod(1 + samples)
+
+    return {
+        "p10": np.percentile(paths, 10, axis=0),
+        "p25": np.percentile(paths, 25, axis=0),
+        "p50": np.percentile(paths, 50, axis=0),
+        "p75": np.percentile(paths, 75, axis=0),
+        "p90": np.percentile(paths, 90, axis=0),
+        "horizon_years": horizon_years,
+        "n_sims": n_sims,
+        "trading_days": trading_days,
+    }
+
+
+def rebalancing_drift(prices: pd.DataFrame, target_weights: dict) -> pd.DataFrame:
+    """Show how weights drifted from target over the past year and required trades."""
+    active = {t: w for t, w in target_weights.items() if w > 0.0001 and t in prices.columns}
+    if not active:
+        return pd.DataFrame()
+
+    tks = list(active.keys())
+    window = prices[tks].tail(252)
+    tw = np.array([active[t] for t in tks])
+
+    growth = (window.iloc[-1] / window.iloc[0]).values
+    current_values = tw * growth
+    current_weights = current_values / current_values.sum()
+    drift = current_weights - tw
+
+    rows = []
+    for i, t in enumerate(tks):
+        d = float(drift[i])
+        rows.append({
+            "Target %": float(tw[i]),
+            "Current %": float(current_weights[i]),
+            "Drift": d,
+            "Action": "SELL" if d > 0.005 else "BUY" if d < -0.005 else "HOLD",
+        })
+    return pd.DataFrame(rows, index=tks)
 
 
 if __name__ == "__main__":

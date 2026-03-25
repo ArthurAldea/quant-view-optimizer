@@ -1,12 +1,14 @@
-"""Quant-View Optimizer — Main Entry Point v2.0
+"""Quant-View Optimizer — Main Entry Point v2.1
 Bloomberg Terminal-style professional portfolio analytics.
 """
+import json
 from datetime import datetime, timezone
 
 import pandas as pd
 import streamlit as st
 
 from logic import (
+    CURRENCIES,
     LOOKBACK_YEARS,
     RETURN_MODELS,
     RISK_FREE_RATE,
@@ -14,8 +16,13 @@ from logic import (
     asset_stats,
     backtest,
     efficient_frontier,
+    get_company_names,
+    monte_carlo,
     optimise,
+    rebalancing_drift,
 )
+from views import landing, render_analytics, render_backtest, render_holdings, render_optimizer
+from guide import render_guide
 
 PRESETS: dict[str, str] = {
     "MAG 7":      "AAPL\nMSFT\nNVDA\nGOOGL\nAMZN\nMETA\nTSLA",
@@ -25,9 +32,8 @@ PRESETS: dict[str, str] = {
     "GLOBAL ETF": "SPY\nQQQ\nEFA\nEEM\nIWM\nGLD\nTLT\nBND",
     "CRYPTO+":    "AAPL\nMSFT\nBTC-USD\nETH-USD\nSOL-USD",
 }
-from views import landing, render_analytics, render_backtest, render_holdings, render_optimizer
 
-# ── Page config ───────────────────────────────────────────────────────────────
+# ── Page config ────────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Quant-View | Portfolio Analytics",
     page_icon="◈",
@@ -89,38 +95,53 @@ hr{border-color:#1e2d45;margin:5px 0;}
 .qv-feat-desc{color:#6b7a8d;font-size:.6rem;line-height:1.7;}
 .qv-landing-cta{text-align:center;margin-top:24px;color:#2a4060;
   font-size:.75rem;letter-spacing:.12em;}
-/* Preset watchlist buttons — compact outline */
 .qv-preset>div>button{background:#040f20!important;color:#c8cdd4!important;
   border:1px solid #1e3a5f!important;font-size:.6rem!important;padding:4px 6px!important;
   letter-spacing:.04em!important;}
 .qv-preset>div>button:hover{background:#0d1f35!important;border-color:#f5a623!important;
   color:#f5a623!important;}
-/* Download / secondary outline buttons */
 .qv-dl>div>button,.qv-dl>div>a{background:transparent!important;
   color:#f5a623!important;border:1px solid #1e3a5f!important;
   font-size:.68rem!important;padding:6px 14px!important;width:auto!important;}
 .qv-dl>div>button:hover{border-color:#f5a623!important;}
-/* st.status styling */
 [data-testid="stStatusWidget"]{background:#040f20;border:1px solid #1e3a5f;
   border-radius:2px;font-size:.72rem;}
 ::-webkit-scrollbar{width:5px;height:5px;}
 ::-webkit-scrollbar-track{background:#020c18;}
 ::-webkit-scrollbar-thumb{background:#1e3a5f;border-radius:3px;}
+details summary{color:#f5a623!important;font-size:.72rem!important;
+  font-weight:700!important;letter-spacing:.1em!important;cursor:pointer;}
+details{background:#040f20!important;border:1px solid #1e3a5f!important;
+  border-radius:2px!important;padding:10px 14px!important;margin:6px 0!important;}
 </style>""", unsafe_allow_html=True)
 
 ACCENT = "#f5a623"
 TEXT   = "#c8cdd4"
 
-# ── Ticker input session state (needed for preset buttons) ─────────────────────
-if "ticker_input" not in st.session_state:
+# ── Session state ──────────────────────────────────────────────────────────────
+if "ticker_input"      not in st.session_state:
     st.session_state["ticker_input"] = "AAPL\nMSFT\nGOOGL\nAMZN\nNVDA"
+if "result"            not in st.session_state:
+    st.session_state.result = None
+if "company_names"     not in st.session_state:
+    st.session_state.company_names = None
+if "saved_portfolios"  not in st.session_state:
+    st.session_state.saved_portfolios: dict = {}
+
 
 # ── Cached computation wrappers ───────────────────────────────────────────────
 @st.cache_data(ttl=3600, show_spinner=False)
-def _run_opt(tickers: tuple, strategy: str, rfr: float,
-             lookback: int, w_min: float, w_max: float,
-             returns_model: str = "mean_historical") -> dict:
-    return optimise(list(tickers), strategy, rfr, lookback, w_min, w_max, returns_model)
+def _run_opt(
+    tickers: tuple,
+    strategy: str,
+    rfr: float,
+    lookback: int,
+    w_min: float,
+    w_max: float,
+    returns_model: str,
+    base_currency: str,
+) -> dict:
+    return optimise(list(tickers), strategy, rfr, lookback, w_min, w_max, returns_model, base_currency)
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
@@ -136,6 +157,21 @@ def _run_bt(prices: pd.DataFrame, weights_key: tuple, benchmark: str) -> pd.Data
 @st.cache_data(ttl=3600, show_spinner=False)
 def _run_stats(prices: pd.DataFrame, rfr: float) -> pd.DataFrame:
     return asset_stats(prices, rfr)
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def _run_mc(prices: pd.DataFrame, weights_key: tuple, horizon: int, n_sims: int) -> dict:
+    return monte_carlo(prices, dict(weights_key), horizon, n_sims)
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def _run_rb(prices: pd.DataFrame, weights_key: tuple) -> pd.DataFrame:
+    return rebalancing_drift(prices, dict(weights_key))
+
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def _get_names(tickers_key: tuple) -> dict[str, str]:
+    return get_company_names(list(tickers_key))
 
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
@@ -178,19 +214,24 @@ with st.sidebar:
     )
     returns_model = RETURN_MODELS[returns_model_label]
 
-    c1, c2 = st.columns(2)
-    with c1:
+    rc1, rc2 = st.columns(2)
+    with rc1:
         st.markdown("<div class='qv-label'>Lookback</div>", unsafe_allow_html=True)
         lookback = st.selectbox(
             "Lookback", [1, 2, 3, 5, 10], index=2,
             format_func=lambda x: f"{x}Y", label_visibility="collapsed",
         )
-    with c2:
-        st.markdown("<div class='qv-label'>Risk-Free Rate</div>", unsafe_allow_html=True)
-        rfr = st.slider(
-            "RFR", 0.0, 0.10, RISK_FREE_RATE, 0.005,
-            format="%.1f%%", label_visibility="collapsed",
+    with rc2:
+        st.markdown("<div class='qv-label'>Base Currency</div>", unsafe_allow_html=True)
+        base_currency = st.selectbox(
+            "Currency", CURRENCIES, index=0, label_visibility="collapsed",
         )
+
+    st.markdown("<div class='qv-label'>Risk-Free Rate</div>", unsafe_allow_html=True)
+    rfr = st.slider(
+        "RFR", 0.0, 0.10, RISK_FREE_RATE, 0.005,
+        format="%.1f%%", label_visibility="collapsed",
+    )
 
     st.markdown("<div class='qv-label'>Weight Constraints</div>", unsafe_allow_html=True)
     wc1, wc2 = st.columns(2)
@@ -206,19 +247,59 @@ with st.sidebar:
     st.markdown("<br>", unsafe_allow_html=True)
     run = st.button("▶  RUN OPTIMIZATION")
 
+    # ── Saved Portfolios ───────────────────────────────────────────────────────
+    st.markdown("---")
+    st.markdown("<div class='qv-label'>Saved Portfolios</div>", unsafe_allow_html=True)
+    sv1, sv2 = st.columns([3, 1])
+    with sv1:
+        save_name = st.text_input(
+            "save_name", placeholder="Portfolio name…",
+            label_visibility="collapsed", key="save_name_input",
+        )
+    with sv2:
+        st.markdown("<div style='margin-top:4px;'>", unsafe_allow_html=True)
+        if st.button("SAVE", key="btn_save"):
+            name = save_name.strip()
+            if name:
+                st.session_state.saved_portfolios[name] = ticker_input
+                st.success(f"Saved '{name}'")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    if st.session_state.saved_portfolios:
+        for pname in list(st.session_state.saved_portfolios):
+            lc1, lc2, lc3 = st.columns([4, 2, 1])
+            with lc1:
+                st.markdown(
+                    f"<div style='color:{TEXT};font-size:.62rem;padding-top:6px;'>{pname}</div>",
+                    unsafe_allow_html=True,
+                )
+            with lc2:
+                if st.button("LOAD", key=f"load_{pname}"):
+                    st.session_state["ticker_input"] = st.session_state.saved_portfolios[pname]
+                    st.rerun()
+            with lc3:
+                if st.button("✕", key=f"del_{pname}"):
+                    del st.session_state.saved_portfolios[pname]
+                    st.rerun()
+        json_export = json.dumps(st.session_state.saved_portfolios, indent=2)
+        st.markdown('<div class="qv-dl">', unsafe_allow_html=True)
+        st.download_button(
+            "⬇ EXPORT SAVED",
+            data=json_export,
+            file_name="quant_view_portfolios.json",
+            mime="application/json",
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
+
     st.markdown("---")
     st.markdown(
         "<div style='color:#6b7a8d;font-size:.58rem;line-height:2;'>"
         "ENGINE &nbsp;&nbsp;&nbsp;&nbsp; CVXPY · CLARABEL<br>"
         "COV MODEL &nbsp; LEDOIT-WOLF SHRINKAGE<br>"
         "DATA &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ADJ. CLOSE · YAHOO<br>"
-        "VERSION &nbsp;&nbsp;&nbsp; 2.0.0</div>",
+        "VERSION &nbsp;&nbsp;&nbsp; 2.1.0</div>",
         unsafe_allow_html=True,
     )
-
-# ── Session state ──────────────────────────────────────────────────────────────
-if "result" not in st.session_state:
-    st.session_state.result = None
 
 # ── Top header bar ─────────────────────────────────────────────────────────────
 now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d  %H:%M UTC")
@@ -229,12 +310,12 @@ st.markdown(
     f"<span style='color:{ACCENT};font-size:1.25rem;font-weight:700;"
     f"letter-spacing:.1em;'>◈ QUANT-VIEW OPTIMIZER</span>"
     f"<span style='color:#6b7a8d;font-size:.6rem;letter-spacing:.08em;"
-    f"margin-left:14px;'>PROFESSIONAL PORTFOLIO ANALYTICS · MPT ENGINE v2.0</span>"
+    f"margin-left:14px;'>PROFESSIONAL PORTFOLIO ANALYTICS · MPT ENGINE v2.1</span>"
     f"</div>"
     f"<div style='text-align:right;'>"
     f"<span style='color:{ACCENT};font-size:.7rem;'>{now_utc}</span><br>"
     f"<span style='color:#6b7a8d;font-size:.58rem;'>"
-    f"MAX SHARPE · MIN VOL · EFFICIENT FRONTIER</span>"
+    f"MAX SHARPE · MIN VOL · EFFICIENT FRONTIER · MONTE CARLO · BLACK-LITTERMAN</span>"
     f"</div></div>",
     unsafe_allow_html=True,
 )
@@ -249,35 +330,45 @@ if run:
         with st.status("◈ Computing portfolio...", expanded=True) as _status:
             _status.write("📡 Fetching adjusted close prices from Yahoo Finance...")
             result = _run_opt(
-                tuple(tickers), strategy, rfr, lookback, w_min, w_max, returns_model,
+                tuple(tickers), strategy, rfr, lookback, w_min, w_max,
+                returns_model, base_currency,
             )
             _status.write(f"📐 Covariance estimated — Ledoit-Wolf shrinkage ({returns_model_label})")
             _status.write("⚡ Efficient frontier solved — CVXPY · CLARABEL")
+            _status.write("🏷  Fetching company names...")
+            active_tks = tuple(t for t, w in result["weights"].items() if w > 0.0001)
+            company_names = _get_names(active_tks)
             _status.update(label="◈ Portfolio optimized  ✓", state="complete", expanded=False)
         st.session_state.result = result
+        st.session_state.company_names = company_names
     except Exception as e:
         st.error(f"Optimization failed: {e}")
         st.stop()
 
 # ── Tabs ──────────────────────────────────────────────────────────────────────
-tab1, tab2, tab3, tab4 = st.tabs([
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "F1  OPTIMIZER",
     "F2  ANALYTICS",
     "F3  BACKTEST",
     "F4  HOLDINGS",
+    "F5  GUIDE",
 ])
 
 with tab1:
     if st.session_state.result is None:
         landing("CONFIGURE PORTFOLIO IN SIDEBAR · PRESS RUN OPTIMIZATION")
     else:
-        render_optimizer(st.session_state.result, strategy_label)
+        render_optimizer(
+            st.session_state.result,
+            strategy_label,
+            st.session_state.company_names,
+        )
 
 with tab2:
     if st.session_state.result is None:
         landing("RUN OPTIMIZATION FIRST TO VIEW ANALYTICS")
     else:
-        render_analytics(st.session_state.result, _run_ef, _run_stats)
+        render_analytics(st.session_state.result, _run_ef, _run_stats, _run_mc)
 
 with tab3:
     if st.session_state.result is None:
@@ -289,4 +380,7 @@ with tab4:
     if st.session_state.result is None:
         landing("RUN OPTIMIZATION FIRST TO VIEW HOLDINGS")
     else:
-        render_holdings(st.session_state.result, _run_stats)
+        render_holdings(st.session_state.result, _run_stats, _run_rb)
+
+with tab5:
+    render_guide()
