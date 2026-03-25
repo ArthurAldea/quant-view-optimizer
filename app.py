@@ -207,7 +207,7 @@ with st.sidebar:
     preset_cols = st.columns(2)
     for i, (pname, ptickers) in enumerate(PRESETS.items()):
         with preset_cols[i % 2]:
-            if st.button(pname, key=f"p_{pname}"):
+            if st.button(pname, key=f"p_{pname}", use_container_width=True):
                 st.session_state["ticker_input"] = ptickers
 
     st.markdown("<div class='qv-label' style='margin-top:8px;'>Tickers — one per line</div>",
@@ -273,7 +273,7 @@ with st.sidebar:
             label_visibility="collapsed", key="save_name_input",
         )
     with sv2:
-        if st.button("SAVE", key="btn_save"):
+        if st.button("SAVE", key="btn_save", use_container_width=True):
             name = save_name.strip()
             if name:
                 st.session_state.saved_portfolios[name] = ticker_input
