@@ -230,7 +230,7 @@ with st.sidebar:
     lk1, lk2 = st.columns([3, 1])
     with lk1:
         lookup_query = st.text_input(
-            "lookup", placeholder="e.g. Commonwealth Bank",
+            "lookup", placeholder="e.g. Apple",
             label_visibility="collapsed", key="lookup_input",
         )
     with lk2:
