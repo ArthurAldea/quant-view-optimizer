@@ -20,6 +20,7 @@ StocksBro applies Harry Markowitz's Modern Portfolio Theory to find optimal port
 - **Configurable lookback** — 1, 2, 3, 5, or 10 years
 - **Weight constraints** — min/max per position (0–25% min, 10–100% max)
 - **Multi-currency** — base currency conversion support
+- **Ticker lookup** — search by company name to find and add tickers instantly
 - **Preset watchlists** — MAG 7, S&P TOP 10, FAANG+, Dividend, Global ETF, Crypto+
 - **Saved portfolios** — save, load, and export custom watchlists
 
@@ -74,6 +75,10 @@ StocksBro pulls data from Yahoo Finance and supports any exchange it covers. Tic
 | Crypto (via Yahoo) | `-USD` | `BTC-USD`, `ETH-USD` |
 
 You can mix assets from different exchanges in the same portfolio. When doing so, select your **Base Currency** in the sidebar — this converts all prices into a single currency before computing returns, reducing FX distortion in the covariance matrix.
+
+### Don't know the ticker symbol?
+
+Use the **Ticker Lookup** field in the sidebar. Type a company name (e.g. "Apple", "BHP", "HSBC") and press **FIND** — up to 6 matching results will appear showing the symbol, company name, and exchange. Press **+** to add any result directly to your ticker list.
 
 ---
 
