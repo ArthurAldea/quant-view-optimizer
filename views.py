@@ -120,7 +120,7 @@ def render_optimizer(
             labels=list(weights.keys()),
             values=list(weights.values()),
             hole=0.54,
-            textinfo="label+percent",
+            texttemplate="<b>%{label}</b><br><b>%{percent:.1%}</b>",
             textfont=dict(family="Courier New", size=12, color="#000000"),
             marker=dict(colors=PALETTE[:len(weights)], line=dict(color=BG, width=3)),
             hovertemplate="<b>%{label}</b><br>Weight: %{percent:.1%}<extra></extra>",
