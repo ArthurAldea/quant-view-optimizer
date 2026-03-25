@@ -1,4 +1,4 @@
-"""Quant-View Optimizer — Main Entry Point v2.1
+"""StocksBro — Main Entry Point v2.1
 Bloomberg Terminal-style professional portfolio analytics.
 """
 import json
@@ -35,7 +35,7 @@ PRESETS: dict[str, str] = {
 
 # ── Page config ────────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Quant-View | Portfolio Analytics",
+    page_title="StocksBro | Portfolio Analytics",
     page_icon="◈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -47,7 +47,12 @@ html,body,[data-testid="stAppViewContainer"],[data-testid="stMain"],.block-conta
   background:#020c18!important;color:#c8cdd4;font-family:'Courier New',monospace;}
 [data-testid="stSidebar"]{background:#040f20!important;border-right:1px solid #1e2d45;}
 [data-testid="stSidebar"] *{font-family:'Courier New',monospace!important;}
-.block-container{padding-top:1rem!important;max-width:100%!important;}
+.block-container{padding-top:0.5rem!important;max-width:100%!important;}
+/* Hide Streamlit top toolbar so the header banner is never cut off */
+header[data-testid="stHeader"]{display:none!important;}
+#MainMenu{display:none!important;}
+[data-testid="stToolbar"]{display:none!important;}
+[data-testid="stDecoration"]{display:none!important;}
 h1,h2,h3{color:#f5a623;letter-spacing:.06em;}
 h1{font-size:1.2rem!important;}h2{font-size:.95rem!important;}h3{font-size:.82rem!important;}
 [data-testid="metric-container"]{background:#040f20;border:1px solid #1e3a5f;
@@ -178,7 +183,7 @@ def _get_names(tickers_key: tuple) -> dict[str, str]:
 with st.sidebar:
     st.markdown(
         "<div style='color:#f5a623;font-size:1.15rem;font-weight:700;"
-        "letter-spacing:.12em;padding:4px 0 2px;'>◈ QUANT-VIEW</div>"
+        "letter-spacing:.12em;padding:4px 0 2px;'>◈ STOCKSBRO</div>"
         "<div style='color:#6b7a8d;font-size:.6rem;letter-spacing:.1em;"
         "text-transform:uppercase;margin-bottom:10px;'>Professional Portfolio Analytics</div>",
         unsafe_allow_html=True,
@@ -308,7 +313,7 @@ st.markdown(
     f"border-bottom:2px solid {ACCENT};padding-bottom:8px;margin-bottom:12px;'>"
     f"<div>"
     f"<span style='color:{ACCENT};font-size:1.25rem;font-weight:700;"
-    f"letter-spacing:.1em;'>◈ QUANT-VIEW OPTIMIZER</span>"
+    f"letter-spacing:.1em;'>◈ STOCKSBRO</span>"
     f"<span style='color:#6b7a8d;font-size:.6rem;letter-spacing:.08em;"
     f"margin-left:14px;'>PROFESSIONAL PORTFOLIO ANALYTICS · MPT ENGINE v2.1</span>"
     f"</div>"

@@ -44,7 +44,7 @@ def _formula(label: str, formula: str, plain: str) -> None:
 def render_guide() -> None:
     st.markdown(
         f"<div style='color:{ACCENT};font-size:1rem;font-weight:700;"
-        f"letter-spacing:.1em;margin-bottom:4px;'>◈ COMPLETE GUIDE</div>"
+        f"letter-spacing:.1em;margin-bottom:4px;'>◈ STOCKSBRO — COMPLETE GUIDE</div>"
         f"<div style='color:#6b7a8d;font-size:.65rem;letter-spacing:.08em;"
         f"margin-bottom:18px;'>Everything explained from first principles — no finance background required</div>",
         unsafe_allow_html=True,
@@ -54,7 +54,7 @@ def render_guide() -> None:
     with st.expander("WHAT IS THIS TOOL?", expanded=True):
         st.markdown(
             """
-**Quant-View Optimizer is a portfolio calculator.** You give it a list of stocks or funds,
+**StocksBro is a portfolio calculator.** You give it a list of stocks or funds,
 and it figures out the *best possible way to split your money* across those assets — based on
 their historical prices and a branch of finance called Modern Portfolio Theory (MPT).
 
@@ -453,7 +453,7 @@ Individual asset analysis:
     st.markdown(
         "<div style='color:#2a4060;font-size:.6rem;text-align:center;"
         "margin-top:32px;letter-spacing:.1em;'>"
-        "QUANT-VIEW OPTIMIZER · BUILT WITH PYPFOPT · DATA FROM YAHOO FINANCE · "
+        "STOCKSBRO · BUILT WITH PYPFOPT · DATA FROM YAHOO FINANCE · "
         "FOR EDUCATIONAL AND INFORMATIONAL USE ONLY · NOT FINANCIAL ADVICE</div>",
         unsafe_allow_html=True,
     )
