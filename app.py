@@ -53,6 +53,9 @@ header[data-testid="stHeader"]{display:none!important;}
 #MainMenu{display:none!important;}
 [data-testid="stToolbar"]{display:none!important;}
 [data-testid="stDecoration"]{display:none!important;}
+/* Hide sidebar collapse/expand button (shows keyboard_double_ icon) */
+[data-testid="stSidebarCollapseButton"]{display:none!important;}
+button[kind="headerNoPadding"]{display:none!important;}
 h1,h2,h3{color:#f5a623;letter-spacing:.06em;}
 h1{font-size:1.2rem!important;}h2{font-size:.95rem!important;}h3{font-size:.82rem!important;}
 [data-testid="metric-container"]{background:#040f20;border:1px solid #1e3a5f;
@@ -101,10 +104,14 @@ hr{border-color:#1e2d45;margin:5px 0;}
 .qv-landing-cta{text-align:center;margin-top:24px;color:#2a4060;
   font-size:.75rem;letter-spacing:.12em;}
 .qv-preset>div>button{background:#040f20!important;color:#c8cdd4!important;
-  border:1px solid #1e3a5f!important;font-size:.6rem!important;padding:4px 6px!important;
-  letter-spacing:.04em!important;}
+  border:1px solid #1e3a5f!important;font-size:.6rem!important;padding:4px 2px!important;
+  letter-spacing:.02em!important;height:36px!important;width:100%!important;
+  white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
 .qv-preset>div>button:hover{background:#0d1f35!important;border-color:#f5a623!important;
   color:#f5a623!important;}
+.qv-save-btn>div>button{background:#1e3a5f!important;color:#f5a623!important;
+  font-size:.72rem!important;padding:4px 6px!important;letter-spacing:.06em!important;
+  font-weight:700!important;border:1px solid #f5a623!important;}
 .qv-dl>div>button,.qv-dl>div>a{background:transparent!important;
   color:#f5a623!important;border:1px solid #1e3a5f!important;
   font-size:.68rem!important;padding:6px 14px!important;width:auto!important;}
@@ -262,7 +269,7 @@ with st.sidebar:
             label_visibility="collapsed", key="save_name_input",
         )
     with sv2:
-        st.markdown("<div style='margin-top:4px;'>", unsafe_allow_html=True)
+        st.markdown("<div class='qv-save-btn' style='margin-top:4px;'>", unsafe_allow_html=True)
         if st.button("SAVE", key="btn_save"):
             name = save_name.strip()
             if name:
