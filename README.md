@@ -59,6 +59,24 @@ Tickers with no available data are silently dropped. A minimum of 2 valid ticker
 
 ---
 
+## Supported Exchanges
+
+StocksBro pulls data from Yahoo Finance and supports any exchange it covers. Ticker format varies by exchange:
+
+| Exchange | Suffix | Example |
+|----------|--------|---------|
+| US (NYSE / NASDAQ) | *(none)* | `AAPL`, `SPY` |
+| ASX (Australia) | `.AX` | `CBA.AX`, `BHP.AX` |
+| London Stock Exchange | `.L` | `HSBA.L` |
+| Toronto Stock Exchange | `.TO` | `RY.TO` |
+| Frankfurt | `.DE` | `SAP.DE` |
+| Tokyo | `.T` | `7203.T` |
+| Crypto (via Yahoo) | `-USD` | `BTC-USD`, `ETH-USD` |
+
+You can mix assets from different exchanges in the same portfolio. When doing so, select your **Base Currency** in the sidebar — this converts all prices into a single currency before computing returns, reducing FX distortion in the covariance matrix.
+
+---
+
 ## Tech Stack
 
 | Layer | Tools |
