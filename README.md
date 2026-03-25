@@ -1,6 +1,6 @@
-# Quant-View Optimizer
+# StocksBro
 
-A Modern Portfolio Theory engine that computes the Max Sharpe Ratio portfolio for any set of tickers using 3 years of historical market data.
+A professional-grade Modern Portfolio Theory engine with a Bloomberg Terminal-style UI, built with Python and Streamlit.
 
 **[Live App →](https://stocksbro.streamlit.app/)**
 
@@ -8,21 +8,38 @@ A Modern Portfolio Theory engine that computes the Max Sharpe Ratio portfolio fo
 
 ## Overview
 
-Quant-View Optimizer applies Harry Markowitz's Modern Portfolio Theory to find the optimal allocation across a user-defined basket of assets. Given a list of tickers, it fetches adjusted close prices, estimates expected returns and the covariance matrix, then solves for the portfolio that maximises the Sharpe Ratio — the highest risk-adjusted return achievable on the efficient frontier.
-
-The result is an optimal weight per asset, with portfolio-level metrics displayed in a Bloomberg-style terminal UI.
+StocksBro applies Harry Markowitz's Modern Portfolio Theory to find optimal portfolio allocations across any user-defined basket of assets. It fetches adjusted close prices, estimates expected returns and the covariance matrix (Ledoit-Wolf shrinkage), then solves for the optimal portfolio using CVXPY / CLARABEL — all presented in a dark terminal-style dashboard.
 
 ---
 
 ## Features
 
-- **Max Sharpe Ratio optimisation** — solves the efficient frontier using CVXPY / CLARABEL
-- **Any ticker, any mix** — enter any combination of equities, ETFs, or indices supported by Yahoo Finance
-- **Portfolio metrics** — Expected Annual Return, Annual Volatility, and Sharpe Ratio
-- **Optimal allocation chart** — donut chart showing active position weights
-- **Position breakdown table** — per-ticker weight and contribution to expected return
-- **Status bar** — shows active positions, zeroed-out tickers, and solver status
-- **Bloomberg-style UI** — dark terminal aesthetic with monospace typography
+### Optimizer
+- **3 strategies** — Max Sharpe Ratio, Min Volatility, Max Quadratic Utility
+- **3 return models** — Mean Historical, CAPM, Black-Litterman
+- **Configurable lookback** — 1, 2, 3, 5, or 10 years
+- **Weight constraints** — min/max per position (0–25% min, 10–100% max)
+- **Multi-currency** — base currency conversion support
+- **Preset watchlists** — MAG 7, S&P TOP 10, FAANG+, Dividend, Global ETF, Crypto+
+- **Saved portfolios** — save, load, and export custom watchlists
+
+### Analytics
+- **Efficient frontier** — full opportunity set with Capital Market Line
+- **Correlation matrix** — heatmap across all assets
+- **Risk attribution** — marginal contribution to portfolio volatility per asset
+- **Monte Carlo simulation** — bootstrapped forward simulation (P10/P25/P50/P75/P90) over 1–10Y horizon
+
+### Backtest
+- **Historical equity curve** — portfolio vs SPY, QQQ, IWM, or BND
+- **Alpha calculation** — active return vs benchmark
+
+### Holdings
+- **Per-asset statistics** — annualised return, volatility, Sharpe, Sortino, max drawdown
+- **Sharpe ratio comparison** — visual bar chart across all assets
+- **Rebalancing drift** — shows how weights have drifted over 1 year with BUY/SELL signals
+
+### Guide
+- Built-in educational tab covering MPT concepts, strategies, and methodology
 
 ---
 
@@ -31,14 +48,14 @@ The result is an optimal weight per asset, with portfolio-level metrics displaye
 | Parameter | Value |
 |-----------|-------|
 | Data source | Yahoo Finance (yfinance) — Adjusted Close prices |
-| Lookback | 3 years |
-| Expected returns | Mean historical return |
-| Covariance matrix | Sample covariance |
-| Optimisation target | Max Sharpe Ratio |
-| Risk-free rate | 4.0% (2026 default) |
+| Lookback | Configurable: 1, 2, 3, 5, 10 years |
+| Expected returns | Mean Historical / CAPM / Black-Litterman (user-selectable) |
+| Covariance matrix | Ledoit-Wolf shrinkage |
+| Optimisation targets | Max Sharpe Ratio · Min Volatility · Max Quadratic Utility |
+| Risk-free rate | Configurable 0–10% (default 4.0%) |
 | Solver | CVXPY / CLARABEL (via PyPortfolioOpt) |
 
-Tickers with no available data are silently dropped. A minimum of 2 valid tickers is required to run the optimisation.
+Tickers with no available data are silently dropped. A minimum of 2 valid tickers is required.
 
 ---
 
@@ -47,7 +64,7 @@ Tickers with no available data are silently dropped. A minimum of 2 valid ticker
 | Layer | Tools |
 |-------|-------|
 | Data | yfinance |
-| Optimisation | PyPortfolioOpt (EfficientFrontier) |
+| Optimisation | PyPortfolioOpt, CVXPY, CLARABEL |
 | UI | Streamlit, Plotly |
 | Runtime | Python 3.11+ |
 
@@ -73,8 +90,10 @@ streamlit run app.py
 ## Project Structure
 
 ```
-app.py          — Streamlit dashboard and UI
-logic.py        — Portfolio optimisation engine (fetch, covariance, Max Sharpe solve)
+app.py          — Streamlit dashboard, sidebar, session state, layout
+logic.py        — Optimisation engine (fetch, covariance, strategies, backtest, Monte Carlo)
+views.py        — Tab rendering functions (Optimizer, Analytics, Backtest, Holdings)
+guide.py        — Educational guide tab content
 requirements.txt
 ```
 
@@ -82,7 +101,7 @@ requirements.txt
 
 ## Limitations
 
-- Expected returns are based on mean historical returns, which assume past performance is indicative of future results — they are not
-- The model does not account for transaction costs, liquidity constraints, or position size limits
-- Optimisation can concentrate heavily in a small number of assets; consider adding weight constraints for practical use
-- Real-time prices are not used — data is fetched from Yahoo Finance at the time of running
+- Expected returns are based on historical data — past performance is not indicative of future results
+- The model does not account for transaction costs, liquidity constraints, or taxes
+- Optimisation can concentrate heavily in a small number of assets without weight constraints
+- Data is fetched from Yahoo Finance at run time — not real-time streaming prices
