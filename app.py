@@ -253,12 +253,14 @@ with st.sidebar:
     wc1, wc2 = st.columns(2)
     with wc1:
         st.caption("Min per position")
-        w_min = st.slider("w_min", 0.0, 0.25, 0.0, 0.01,
-                          format="%.0f%%", label_visibility="collapsed")
+        w_min_pct = st.slider("w_min", 0, 25, 0, 1,
+                              format="%d%%", label_visibility="collapsed")
+        w_min = w_min_pct / 100
     with wc2:
         st.caption("Max per position")
-        w_max = st.slider("w_max", 0.10, 1.0, 1.0, 0.05,
-                          format="%.0f%%", label_visibility="collapsed")
+        w_max_pct = st.slider("w_max", 10, 100, 100, 5,
+                              format="%d%%", label_visibility="collapsed")
+        w_max = w_max_pct / 100
 
     st.markdown("<br>", unsafe_allow_html=True)
     run = st.button("▶  RUN OPTIMIZATION")
