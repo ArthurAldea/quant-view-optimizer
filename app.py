@@ -20,6 +20,7 @@ from logic import (
     monte_carlo,
     optimise,
     rebalancing_drift,
+    search_tickers,
 )
 from views import landing, render_analytics, render_backtest, render_holdings, render_optimizer
 from guide import render_guide
@@ -144,6 +145,8 @@ if "company_names"     not in st.session_state:
     st.session_state.company_names = None
 if "saved_portfolios"  not in st.session_state:
     st.session_state.saved_portfolios: dict = {}
+if "lookup_results"    not in st.session_state:
+    st.session_state.lookup_results: list = []
 
 
 # ── Cached computation wrappers ───────────────────────────────────────────────
@@ -220,6 +223,46 @@ with st.sidebar:
         "tickers", key="ticker_input",
         height=130, label_visibility="collapsed",
     )
+
+    # ── Ticker Lookup ──────────────────────────────────────────────────────────
+    st.markdown("<div class='qv-label' style='margin-top:6px;'>Ticker Lookup</div>",
+                unsafe_allow_html=True)
+    lk1, lk2 = st.columns([3, 1])
+    with lk1:
+        lookup_query = st.text_input(
+            "lookup", placeholder="e.g. Commonwealth Bank",
+            label_visibility="collapsed", key="lookup_input",
+        )
+    with lk2:
+        if st.button("FIND", key="btn_lookup", use_container_width=True):
+            if lookup_query.strip():
+                st.session_state.lookup_results = search_tickers(lookup_query.strip())
+            else:
+                st.session_state.lookup_results = []
+
+    if st.session_state.lookup_results:
+        for res in st.session_state.lookup_results:
+            rc1, rc2 = st.columns([5, 1])
+            with rc1:
+                st.markdown(
+                    f"<div style='font-size:.6rem;color:{TEXT};padding-top:6px;line-height:1.5;'>"
+                    f"<b style='color:{ACCENT};'>{res['symbol']}</b>"
+                    f"&nbsp;·&nbsp;{res['name']}"
+                    f"<span style='color:#6b7a8d;'>&nbsp;({res['exchange']})</span></div>",
+                    unsafe_allow_html=True,
+                )
+            with rc2:
+                if st.button("+", key=f"add_{res['symbol']}", use_container_width=True):
+                    current = st.session_state["ticker_input"].strip()
+                    tickers_existing = [t.strip().upper() for t in current.splitlines() if t.strip()]
+                    if res["symbol"].upper() not in tickers_existing:
+                        st.session_state["ticker_input"] = (
+                            current + ("\n" if current else "") + res["symbol"]
+                        )
+                    st.session_state.lookup_results = []
+                    st.rerun()
+    elif lookup_query and not st.session_state.lookup_results:
+        pass  # no results shown until FIND is pressed
 
     st.markdown("<div class='qv-label'>Strategy</div>", unsafe_allow_html=True)
     strategy_label = st.selectbox(

@@ -1,6 +1,7 @@
 """Quant-View Optimizer — Core Engine v2.1
 Portfolio optimization, analytics, and backtesting using PyPortfolioOpt.
 """
+import requests
 import numpy as np
 import pandas as pd
 import yfinance as yf
@@ -61,6 +62,34 @@ def fetch_prices(
             print(f"[FX conversion failed for {base_currency}: {exc}]")
 
     return prices
+
+
+def search_tickers(query: str) -> list[dict]:
+    """Search Yahoo Finance for tickers matching a company name or symbol.
+    Returns a list of dicts with keys: symbol, name, exchange, type.
+    """
+    try:
+        resp = requests.get(
+            "https://query2.finance.yahoo.com/v1/finance/search",
+            params={"q": query, "quotesCount": 6, "newsCount": 0},
+            headers={"User-Agent": "Mozilla/5.0"},
+            timeout=5,
+        )
+        resp.raise_for_status()
+        results = []
+        for q in resp.json().get("quotes", []):
+            symbol = q.get("symbol", "")
+            if not symbol:
+                continue
+            results.append({
+                "symbol":   symbol,
+                "name":     q.get("shortname") or q.get("longname") or "",
+                "exchange": q.get("exchDisp") or q.get("exchange") or "",
+                "type":     q.get("typeDisp") or q.get("quoteType") or "",
+            })
+        return results
+    except Exception:
+        return []
 
 
 def get_company_names(tickers: list[str]) -> dict[str, str]:
