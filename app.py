@@ -104,14 +104,19 @@ hr{border-color:#1e2d45;margin:5px 0;}
 .qv-landing-cta{text-align:center;margin-top:24px;color:#2a4060;
   font-size:.75rem;letter-spacing:.12em;}
 .qv-preset>div>button{background:#040f20!important;color:#c8cdd4!important;
-  border:1px solid #1e3a5f!important;font-size:.6rem!important;padding:4px 2px!important;
-  letter-spacing:.02em!important;height:36px!important;width:100%!important;
-  white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+  border:1px solid #1e3a5f!important;font-size:.52rem!important;padding:0 4px!important;
+  letter-spacing:.02em!important;height:32px!important;width:100%!important;
+  white-space:nowrap!important;overflow:hidden!important;text-overflow:clip!important;
+  line-height:32px!important;display:flex!important;align-items:center!important;
+  justify-content:center!important;}
 .qv-preset>div>button:hover{background:#0d1f35!important;border-color:#f5a623!important;
   color:#f5a623!important;}
 .qv-save-btn>div>button{background:#1e3a5f!important;color:#f5a623!important;
-  font-size:.72rem!important;padding:4px 6px!important;letter-spacing:.06em!important;
-  font-weight:700!important;border:1px solid #f5a623!important;}
+  font-size:.52rem!important;padding:0 4px!important;letter-spacing:.04em!important;
+  font-weight:700!important;border:1px solid #f5a623!important;
+  height:32px!important;width:100%!important;white-space:nowrap!important;
+  line-height:32px!important;display:flex!important;align-items:center!important;
+  justify-content:center!important;}
 .qv-dl>div>button,.qv-dl>div>a{background:transparent!important;
   color:#f5a623!important;border:1px solid #1e3a5f!important;
   font-size:.68rem!important;padding:6px 14px!important;width:auto!important;}
