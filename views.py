@@ -217,10 +217,13 @@ def render_analytics(r: dict, ef_fn, stats_fn, mc_fn=None) -> None:
             textfont=dict(size=8, color="#ff6b6b"),
         ))
         fig.update_layout(
-            **_pl(height=360, xaxis_title="Annual Volatility",
-                  yaxis_title="Expected Return"),
-            xaxis=dict(**_PL_BASE["xaxis"], tickformat=".0%"),
-            yaxis=dict(**_PL_BASE["yaxis"], tickformat=".0%"),
+            **_pl(
+                height=360,
+                xaxis_title="Annual Volatility",
+                yaxis_title="Expected Return",
+                xaxis=dict(**_PL_BASE["xaxis"], tickformat=".0%"),
+                yaxis=dict(**_PL_BASE["yaxis"], tickformat=".0%"),
+            )
         )
         st.plotly_chart(fig, use_container_width=True)
 
