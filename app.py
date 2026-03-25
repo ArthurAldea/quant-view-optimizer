@@ -103,18 +103,14 @@ hr{border-color:#1e2d45;margin:5px 0;}
 .qv-feat-desc{color:#6b7a8d;font-size:.6rem;line-height:1.7;}
 .qv-landing-cta{text-align:center;margin-top:24px;color:#2a4060;
   font-size:.75rem;letter-spacing:.12em;}
-.qv-preset button{background:#040f20!important;color:#c8cdd4!important;
-  border:1px solid #1e3a5f!important;font-size:.52rem!important;padding:0 4px!important;
-  letter-spacing:.02em!important;height:32px!important;min-height:32px!important;
-  max-height:32px!important;width:100%!important;white-space:nowrap!important;
-  overflow:hidden!important;text-overflow:clip!important;}
-.qv-preset button:hover{background:#0d1f35!important;border-color:#f5a623!important;
-  color:#f5a623!important;}
-.qv-save-btn button{background:#1e3a5f!important;color:#f5a623!important;
-  font-size:.52rem!important;padding:0 4px!important;letter-spacing:.04em!important;
-  font-weight:700!important;border:1px solid #f5a623!important;
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] button{
+  background:#040f20!important;color:#c8cdd4!important;
+  border:1px solid #1e3a5f!important;font-size:.55rem!important;
+  padding:0 4px!important;letter-spacing:.03em!important;
   height:32px!important;min-height:32px!important;max-height:32px!important;
-  width:100%!important;white-space:nowrap!important;}
+  width:100%!important;white-space:nowrap!important;overflow:hidden!important;}
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] button:hover{
+  background:#0d1f35!important;border-color:#f5a623!important;color:#f5a623!important;}
 .qv-dl>div>button,.qv-dl>div>a{background:transparent!important;
   color:#f5a623!important;border:1px solid #1e3a5f!important;
   font-size:.68rem!important;padding:6px 14px!important;width:auto!important;}
@@ -205,10 +201,8 @@ with st.sidebar:
     preset_cols = st.columns(3)
     for i, (pname, ptickers) in enumerate(PRESETS.items()):
         with preset_cols[i % 3]:
-            st.markdown('<div class="qv-preset">', unsafe_allow_html=True)
             if st.button(pname, key=f"p_{pname}"):
                 st.session_state["ticker_input"] = ptickers
-            st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<div class='qv-label' style='margin-top:8px;'>Tickers — one per line</div>",
                 unsafe_allow_html=True)
@@ -243,10 +237,11 @@ with st.sidebar:
         )
 
     st.markdown("<div class='qv-label'>Risk-Free Rate</div>", unsafe_allow_html=True)
-    rfr = st.slider(
-        "RFR", 0.0, 0.10, RISK_FREE_RATE, 0.005,
+    rfr_pct = st.slider(
+        "RFR", 0.0, 10.0, RISK_FREE_RATE * 100, 0.5,
         format="%.1f%%", label_visibility="collapsed",
     )
+    rfr = rfr_pct / 100
 
     st.markdown("<div class='qv-label'>Weight Constraints</div>", unsafe_allow_html=True)
     wc1, wc2 = st.columns(2)
@@ -272,13 +267,11 @@ with st.sidebar:
             label_visibility="collapsed", key="save_name_input",
         )
     with sv2:
-        st.markdown("<div class='qv-save-btn' style='margin-top:4px;'>", unsafe_allow_html=True)
         if st.button("SAVE", key="btn_save"):
             name = save_name.strip()
             if name:
                 st.session_state.saved_portfolios[name] = ticker_input
                 st.success(f"Saved '{name}'")
-        st.markdown("</div>", unsafe_allow_html=True)
 
     if st.session_state.saved_portfolios:
         for pname in list(st.session_state.saved_portfolios):
