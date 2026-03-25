@@ -247,9 +247,12 @@ def render_analytics(r: dict, ef_fn, stats_fn, mc_fn=None) -> None:
             ),
         ))
         fig2.update_layout(
-            **_pl(height=360, margin=dict(t=32, b=36, l=60, r=20)),
-            xaxis=dict(tickfont=dict(size=9), color=TEXT),
-            yaxis=dict(tickfont=dict(size=9), color=TEXT),
+            **_pl(
+                height=360,
+                margin=dict(t=32, b=36, l=60, r=20),
+                xaxis=dict(tickfont=dict(size=9), color=TEXT),
+                yaxis=dict(tickfont=dict(size=9), color=TEXT),
+            )
         )
         st.plotly_chart(fig2, use_container_width=True)
 
@@ -274,9 +277,11 @@ def render_analytics(r: dict, ef_fn, stats_fn, mc_fn=None) -> None:
         hovertemplate="<b>%{y}</b><br>Risk Contrib: %{x:.2%}<extra></extra>",
     ))
     fig3.update_layout(
-        **_pl(height=max(220, 60 + len(rc_s) * 34),
-              xaxis_title="Marginal Contribution to Volatility"),
-        xaxis=dict(**_PL_BASE["xaxis"], tickformat=".1%"),
+        **_pl(
+            height=max(220, 60 + len(rc_s) * 34),
+            xaxis_title="Marginal Contribution to Volatility",
+            xaxis=dict(**_PL_BASE["xaxis"], tickformat=".1%"),
+        )
     )
     st.plotly_chart(fig3, use_container_width=True)
 
@@ -483,19 +488,27 @@ def render_holdings(r: dict, stats_fn, rb_fn=None) -> None:
                 marker_color=drift_colors_bar,
                 text=[f"{v:+.2%}" for v in drift_df["Drift"].values],
                 textposition="outside", textfont=dict(size=9, color=TEXT),
+                customdata=list(zip(
+                    drift_df["Target %"].map(lambda x: f"{x:.2%}"),
+                    drift_df["Current %"].map(lambda x: f"{x:.2%}"),
+                    drift_df["Action"],
+                )),
                 hovertemplate=(
                     "<b>%{x}</b><br>"
-                    "Target: " + drift_df["Target %"].map(lambda x: f"{x:.2%}") + "<br>"
-                    "Current: " + drift_df["Current %"].map(lambda x: f"{x:.2%}") + "<br>"
+                    "Target: %{customdata[0]}<br>"
+                    "Current: %{customdata[1]}<br>"
                     "Drift: %{y:.2%}<br>"
-                    "Action: " + drift_df["Action"] +
+                    "Action: %{customdata[2]}"
                     "<extra></extra>"
                 ),
             ))
             fig_drift.add_hline(y=0, line_color=ACCENT, line_width=1)
             fig_drift.update_layout(
-                **_pl(height=280, yaxis_title="Weight Drift"),
-                yaxis=dict(**_PL_BASE["yaxis"], tickformat=".1%"),
+                **_pl(
+                    height=280,
+                    yaxis_title="Weight Drift",
+                    yaxis=dict(**_PL_BASE["yaxis"], tickformat=".1%"),
+                )
             )
             st.plotly_chart(fig_drift, use_container_width=True)
 
