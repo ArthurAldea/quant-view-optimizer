@@ -108,6 +108,78 @@ This tool asks: *given these assets, what's the smartest way to split my money?*
             """
         )
 
+    # ── SECTION 2b: Supported Exchanges ───────────────────────────────────────
+    with st.expander("SUPPORTED EXCHANGES & INTERNATIONAL STOCKS"):
+        _header("How tickers work across exchanges")
+        st.markdown(
+            """
+StocksBro fetches data from **Yahoo Finance**, which supports thousands of exchanges worldwide.
+The key is knowing the correct ticker format for each exchange.
+            """
+        )
+        _header("United States (default)")
+        st.markdown(
+            """
+US stocks and ETFs use their ticker as-is — no suffix needed:
+- `AAPL` = Apple
+- `MSFT` = Microsoft
+- `SPY` = S&P 500 ETF
+- `BTC-USD` = Bitcoin in USD
+            """
+        )
+        _header("ASX — Australian Securities Exchange")
+        st.markdown(
+            """
+ASX-listed stocks require the `.AX` suffix appended to the ticker:
+
+| Company | ASX Code | Enter as |
+|---------|----------|----------|
+| Commonwealth Bank | CBA | `CBA.AX` |
+| BHP Group | BHP | `BHP.AX` |
+| NAB | NAB | `NAB.AX` |
+| Wesfarmers | WES | `WES.AX` |
+| CSL Limited | CSL | `CSL.AX` |
+
+Simply add `.AX` to the end of any ASX ticker symbol.
+            """
+        )
+        _header("Other major exchanges")
+        st.markdown(
+            """
+The same suffix pattern applies to other international exchanges:
+
+| Exchange | Suffix | Example |
+|----------|--------|---------|
+| London Stock Exchange | `.L` | `HSBA.L` |
+| Toronto Stock Exchange | `.TO` | `RY.TO` |
+| Frankfurt | `.DE` | `SAP.DE` |
+| Tokyo | `.T` | `7203.T` (Toyota) |
+            """
+        )
+        _header("Mixing exchanges in one portfolio")
+        _note(
+            "You can mix US, ASX, and other stocks in the same portfolio — the tool will fetch "
+            "and optimize them together. <b>However, be aware of the currency limitation below.</b>"
+        )
+        _header("Currency caveat when mixing exchanges")
+        st.markdown(
+            """
+When you mix assets from different exchanges (e.g., US stocks in USD and ASX stocks in AUD),
+the optimizer works with **raw price data in each asset's native currency**. This means:
+
+- Returns for `CBA.AX` are calculated in AUD
+- Returns for `AAPL` are calculated in USD
+- The covariance matrix mixes AUD and USD return series
+
+This can **distort** the optimization because a 5% move in AUD is not the same as a 5% move in USD
+once you account for the exchange rate.
+
+**How to reduce this distortion:** select your home currency (e.g., AUD) in the **Base Currency**
+selector. The tool will convert all prices into AUD before computing returns, giving you a more
+accurate picture of your portfolio in your local currency.
+            """
+        )
+
     # ── SECTION 3: Risk and Return ─────────────────────────────────────────────
     with st.expander("RISK VS. RETURN — THE FUNDAMENTAL TRADE-OFF"):
         _note(
@@ -385,8 +457,13 @@ When you select a **Base Currency** other than USD in the sidebar, the tool:
 This removes the **FX distortion** from global portfolios — a 10% stock gain means
 less if USD weakened 5% against EUR during the same period.
 
+**Example — Australian investor:** if you hold `CBA.AX` (priced in AUD) alongside `AAPL`
+(priced in USD), selecting AUD as base currency ensures both are evaluated in AUD,
+so the optimizer correctly accounts for the FX impact on your US holdings.
+
 **Tickers with known FX issues:** Stocks already priced in your target currency
-(e.g., European stocks traded on EU exchanges) may double-convert. Use with awareness.
+(e.g., ASX stocks for an AUD base) will not be double-converted — only foreign-currency
+assets get the FX adjustment applied.
             """
         )
 

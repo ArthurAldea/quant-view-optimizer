@@ -210,8 +210,12 @@ with st.sidebar:
             if st.button(pname, key=f"p_{pname}", use_container_width=True):
                 st.session_state["ticker_input"] = ptickers
 
-    st.markdown("<div class='qv-label' style='margin-top:8px;'>Tickers — one per line</div>",
-                unsafe_allow_html=True)
+    st.markdown(
+        "<div class='qv-label' style='margin-top:8px;'>Tickers — one per line</div>"
+        "<div style='color:#6b7a8d;font-size:.58rem;line-height:1.7;margin-bottom:4px;'>"
+        "US: AAPL &nbsp;·&nbsp; ASX: CBA.AX &nbsp;·&nbsp; Crypto: BTC-USD</div>",
+        unsafe_allow_html=True,
+    )
     ticker_input = st.text_area(
         "tickers", key="ticker_input",
         height=130, label_visibility="collapsed",
