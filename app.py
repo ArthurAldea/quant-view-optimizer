@@ -103,12 +103,16 @@ hr{border-color:#1e2d45;margin:5px 0;}
 .qv-feat-desc{color:#6b7a8d;font-size:.6rem;line-height:1.7;}
 .qv-landing-cta{text-align:center;margin-top:24px;color:#2a4060;
   font-size:.75rem;letter-spacing:.12em;}
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"]{
+  flex:1 1 0%!important;min-width:0!important;}
 [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] button{
   background:#040f20!important;color:#c8cdd4!important;
   border:1px solid #1e3a5f!important;font-size:.58rem!important;
-  padding:0 4px!important;letter-spacing:.02em!important;
+  padding:0!important;letter-spacing:.02em!important;
   height:32px!important;min-height:32px!important;max-height:32px!important;
-  width:100%!important;white-space:nowrap!important;overflow:hidden!important;}
+  width:100%!important;white-space:nowrap!important;overflow:hidden!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  text-align:center!important;box-sizing:border-box!important;}
 [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] button:hover{
   background:#0d1f35!important;border-color:#f5a623!important;color:#f5a623!important;}
 .qv-dl>div>button,.qv-dl>div>a{background:transparent!important;
