@@ -1,4 +1,4 @@
-"""StocksBro — Main Entry Point v2.1
+"""StocksBro — Main Entry Point v2.2
 Bloomberg Terminal-style professional portfolio analytics.
 """
 import json
@@ -31,7 +31,7 @@ PRESETS: dict[str, str] = {
     "FAANG+":     "META\nAAPL\nAMZN\nNFLX\nGOOGL\nMSFT",
     "DIVIDEND":   "JNJ\nKO\nPG\nXOM\nABBV\nWMT\nT\nVZ\nMRK\nCL",
     "GLOBAL ETF": "SPY\nQQQ\nEFA\nEEM\nIWM\nGLD\nTLT\nBND",
-    "CRYPTO+":    "AAPL\nMSFT\nBTC-USD\nETH-USD\nSOL-USD",
+    "CRYPTO+":    "BTC-USD\nETH-USD\nSOL-USD\nLINK-USD\nADA-USD",
 }
 
 # ── Page config ────────────────────────────────────────────────────────────────
@@ -131,6 +131,17 @@ details summary{color:#f5a623!important;font-size:.72rem!important;
   font-weight:700!important;letter-spacing:.1em!important;cursor:pointer;}
 details{background:#040f20!important;border:1px solid #1e3a5f!important;
   border-radius:2px!important;padding:10px 14px!important;margin:6px 0!important;}
+/* Hover tooltips on section headings */
+.qv-tip{position:relative;display:inline-block;cursor:help;}
+.qv-tip-box{visibility:hidden;opacity:0;pointer-events:none;
+  background:#040f20;border:1px solid #f5a623;color:#c8cdd4;
+  font-family:'Courier New',monospace;font-size:.63rem;line-height:1.7;
+  font-weight:400;letter-spacing:0;text-transform:none;
+  padding:8px 12px;border-radius:2px;
+  position:absolute;z-index:9999;width:340px;
+  bottom:130%;left:0;
+  transition:opacity .15s ease;}
+.qv-tip:hover .qv-tip-box{visibility:visible;opacity:1;}
 </style>""", unsafe_allow_html=True)
 
 ACCENT = "#f5a623"
@@ -147,6 +158,16 @@ if "saved_portfolios"  not in st.session_state:
     st.session_state.saved_portfolios: dict = {}
 if "lookup_results"    not in st.session_state:
     st.session_state.lookup_results: list = []
+if "result_params"     not in st.session_state:
+    st.session_state["result_params"] = None
+if "trade_history"     not in st.session_state:
+    st.session_state["trade_history"] = []
+if "mc_n"              not in st.session_state:
+    st.session_state["mc_n"] = 1000
+if "mc_horizon"        not in st.session_state:
+    st.session_state["mc_horizon"] = 3
+if "_pending_ticker"   not in st.session_state:
+    st.session_state["_pending_ticker"] = None
 
 
 # ── Cached computation wrappers ───────────────────────────────────────────────
@@ -213,6 +234,15 @@ with st.sidebar:
             if st.button(pname, key=f"p_{pname}", use_container_width=True):
                 st.session_state["ticker_input"] = ptickers
 
+    # Apply any pending ticker add BEFORE text_area is instantiated
+    if st.session_state["_pending_ticker"]:
+        current = st.session_state["ticker_input"].strip()
+        tickers_existing = [t.strip().upper() for t in current.splitlines() if t.strip()]
+        sym = st.session_state["_pending_ticker"]
+        if sym.upper() not in tickers_existing:
+            st.session_state["ticker_input"] = current + ("\n" if current else "") + sym
+        st.session_state["_pending_ticker"] = None
+
     st.markdown(
         "<div class='qv-label' style='margin-top:8px;'>Tickers — one per line</div>"
         "<div style='color:#6b7a8d;font-size:.58rem;line-height:1.7;margin-bottom:4px;'>"
@@ -227,10 +257,10 @@ with st.sidebar:
     # ── Ticker Lookup ──────────────────────────────────────────────────────────
     st.markdown("<div class='qv-label' style='margin-top:6px;'>Ticker Lookup</div>",
                 unsafe_allow_html=True)
-    lk1, lk2 = st.columns([3, 1])
+    lk1, lk2 = st.columns([5, 1])
     with lk1:
         lookup_query = st.text_input(
-            "lookup", placeholder="e.g. Apple",
+            "lookup", placeholder="Apple",
             label_visibility="collapsed", key="lookup_input",
         )
     with lk2:
@@ -253,12 +283,7 @@ with st.sidebar:
                 )
             with rc2:
                 if st.button("+", key=f"add_{res['symbol']}", use_container_width=True):
-                    current = st.session_state["ticker_input"].strip()
-                    tickers_existing = [t.strip().upper() for t in current.splitlines() if t.strip()]
-                    if res["symbol"].upper() not in tickers_existing:
-                        st.session_state["ticker_input"] = (
-                            current + ("\n" if current else "") + res["symbol"]
-                        )
+                    st.session_state["_pending_ticker"] = res["symbol"]
                     st.session_state.lookup_results = []
                     st.rerun()
     elif lookup_query and not st.session_state.lookup_results:
@@ -280,7 +305,7 @@ with st.sidebar:
     with rc1:
         st.markdown("<div class='qv-label'>Lookback</div>", unsafe_allow_html=True)
         lookback = st.selectbox(
-            "Lookback", [1, 2, 3, 5, 10], index=2,
+            "Lookback", [1, 2, 3, 5, 10], index=4,
             format_func=lambda x: f"{x}Y", label_visibility="collapsed",
         )
     with rc2:
@@ -360,7 +385,7 @@ with st.sidebar:
         "ENGINE &nbsp;&nbsp;&nbsp;&nbsp; CVXPY · CLARABEL<br>"
         "COV MODEL &nbsp; LEDOIT-WOLF SHRINKAGE<br>"
         "DATA &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ADJ. CLOSE · YAHOO<br>"
-        "VERSION &nbsp;&nbsp;&nbsp; 2.1.0</div>",
+        "VERSION &nbsp;&nbsp;&nbsp; 2.2.0</div>",
         unsafe_allow_html=True,
     )
 
@@ -373,7 +398,7 @@ st.markdown(
     f"<span style='color:{ACCENT};font-size:1.25rem;font-weight:700;"
     f"letter-spacing:.1em;'>◈ STOCKSBRO</span>"
     f"<span style='color:#6b7a8d;font-size:.6rem;letter-spacing:.08em;"
-    f"margin-left:14px;'>PROFESSIONAL PORTFOLIO ANALYTICS · MPT ENGINE v2.1</span>"
+    f"margin-left:14px;'>PROFESSIONAL PORTFOLIO ANALYTICS · MPT ENGINE v2.2</span>"
     f"</div>"
     f"<div style='text-align:right;'>"
     f"<span style='color:{ACCENT};font-size:.7rem;'>{now_utc}</span><br>"
@@ -389,6 +414,9 @@ if run:
     if len(tickers) < 2:
         st.error("Enter at least 2 tickers.")
         st.stop()
+    # Clear stale result immediately so tabs show landing while computing
+    st.session_state.result = None
+    st.session_state["result_params"] = None
     try:
         with st.status("◈ Computing portfolio...", expanded=True) as _status:
             _status.write("📡 Fetching adjusted close prices from Yahoo Finance...")
@@ -404,9 +432,36 @@ if run:
             _status.update(label="◈ Portfolio optimized  ✓", state="complete", expanded=False)
         st.session_state.result = result
         st.session_state.company_names = company_names
+        st.session_state["result_params"] = {
+            "tickers": tuple(sorted(tickers)),
+            "strategy": strategy,
+            "rfr": rfr,
+            "lookback": lookback,
+            "w_min": w_min,
+            "w_max": w_max,
+            "returns_model": returns_model,
+            "base_currency": base_currency,
+        }
     except Exception as e:
         st.error(f"Optimization failed: {e}")
         st.stop()
+
+# ── Stale-result warning ───────────────────────────────────────────────────────
+if st.session_state.result is not None and st.session_state.get("result_params"):
+    rp = st.session_state["result_params"]
+    current_tickers = tuple(sorted([t.strip().upper() for t in ticker_input.splitlines() if t.strip()]))
+    params_changed = (
+        current_tickers != rp["tickers"]
+        or strategy != rp["strategy"]
+        or rfr != rp["rfr"]
+        or lookback != rp["lookback"]
+        or w_min != rp["w_min"]
+        or w_max != rp["w_max"]
+        or returns_model != rp["returns_model"]
+        or base_currency != rp["base_currency"]
+    )
+    if params_changed:
+        st.warning("Parameters changed — press **RUN OPTIMIZATION** to refresh results.", icon="⚠️")
 
 # ── Tabs ──────────────────────────────────────────────────────────────────────
 tab1, tab2, tab3, tab4, tab5 = st.tabs([

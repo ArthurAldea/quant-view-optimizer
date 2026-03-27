@@ -1,4 +1,4 @@
-"""Quant-View Optimizer — Tab views v2.1
+"""Quant-View Optimizer — Tab views v2.2
 Rendering functions for each tab. Imported by app.py.
 """
 from datetime import datetime, timedelta
@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+import yfinance as yf
 
 # ── Design tokens ──────────────────────────────────────────────────────────────
 BG     = "#020c18"
@@ -37,6 +38,19 @@ def _pl(**kw) -> dict:
     d = dict(_PL_BASE)
     d.update(kw)
     return d
+
+
+def _titled(title: str, tooltip: str) -> None:
+    """Render a section heading that reveals a tooltip on hover."""
+    st.markdown(
+        f"<div class='qv-tip' style='margin:0.8rem 0 0.4rem;'>"
+        f"<span style='color:#f5a623;font-size:.82rem;font-weight:700;"
+        f"letter-spacing:.06em;border-bottom:1px dashed rgba(245,166,35,0.45);'>"
+        f"{title} <span style='font-size:.65rem;opacity:.7;'>ⓘ</span></span>"
+        f"<div class='qv-tip-box'>{tooltip}</div>"
+        f"</div>",
+        unsafe_allow_html=True,
+    )
 
 
 def landing(msg: str) -> None:
@@ -105,16 +119,33 @@ def render_optimizer(
     )
 
     k1, k2, k3, k4 = st.columns(4)
-    k1.metric("Expected Annual Return", f"{r['expected_return']:.2%}")
-    k2.metric("Annual Volatility",       f"{r['annual_volatility']:.2%}")
-    k3.metric("Sharpe Ratio",            f"{r['sharpe_ratio']:.4f}")
-    k4.metric("Max Drawdown",            f"{r['max_drawdown']:.2%}")
+    k1.metric(
+        "Expected Annual Return", f"{r['expected_return']:.2%}",
+        help="The annualised return predicted by the selected returns model, based on historical price data over the lookback period.",
+    )
+    k2.metric(
+        "Annual Volatility", f"{r['annual_volatility']:.2%}",
+        help="The expected year-to-year fluctuation in portfolio value. Lower volatility means a smoother ride, but typically lower returns.",
+    )
+    k3.metric(
+        "Sharpe Ratio", f"{r['sharpe_ratio']:.4f}",
+        help="Return earned per unit of risk: (Expected Return − Risk-Free Rate) ÷ Volatility. Above 1.0 is generally considered strong.",
+    )
+    k4.metric(
+        "Max Drawdown", f"{r['max_drawdown']:.2%}",
+        help="The largest peak-to-trough decline recorded in the portfolio over the lookback period — a measure of worst-case historical loss.",
+    )
 
     st.markdown("<br>", unsafe_allow_html=True)
     col_c, col_t = st.columns([1.1, 0.9])
 
     with col_c:
-        st.markdown("### OPTIMAL ALLOCATION")
+        _titled(
+            "OPTIMAL ALLOCATION",
+            "Each slice shows the percentage of capital the optimizer assigned to that asset. "
+            "Assets zeroed out were excluded because they reduced risk-adjusted return. "
+            "Hover any slice for the exact weight.",
+        )
         center = strategy_label.upper().replace(" ", "<br>")
         fig = go.Figure(go.Pie(
             labels=list(weights.keys()),
@@ -134,7 +165,12 @@ def render_optimizer(
         st.plotly_chart(fig, use_container_width=True)
 
     with col_t:
-        st.markdown("### POSITION BREAKDOWN")
+        _titled(
+            "POSITION BREAKDOWN",
+            "All active holdings ranked by weight. "
+            "Wtd. Return shows each asset's proportional contribution to the portfolio's total expected return — "
+            "a high-weight, low-return asset drags overall performance.",
+        )
         rows = []
         for t, w in sorted(weights.items(), key=lambda x: -x[1]):
             row: dict = {"Ticker": t}
@@ -176,7 +212,13 @@ def render_analytics(r: dict, ef_fn, stats_fn, mc_fn=None) -> None:
     col_ef, col_corr = st.columns(2)
 
     with col_ef:
-        st.markdown("### EFFICIENT FRONTIER")
+        _titled(
+            "EFFICIENT FRONTIER",
+            "The curve plots every optimal portfolio achievable with your assets — moving right adds return but increases risk. "
+            "The gold star marks Max Sharpe (best risk-adjusted return); the green diamond marks Min Volatility. "
+            "The dashed Capital Market Line shows the trade-off between the risk-free rate and the risky portfolio. "
+            "Your optimised portfolio is plotted in red.",
+        )
         with st.spinner("Computing frontier points..."):
             ef = ef_fn(prices, rfr_v)
 
@@ -228,7 +270,12 @@ def render_analytics(r: dict, ef_fn, stats_fn, mc_fn=None) -> None:
         st.plotly_chart(fig, use_container_width=True)
 
     with col_corr:
-        st.markdown("### CORRELATION MATRIX")
+        _titled(
+            "CORRELATION MATRIX",
+            "Shows how closely each pair of assets moves together: +1 means lockstep, -1 means perfectly inverse, 0 means no relationship. "
+            "Low or negative correlations reduce portfolio volatility through diversification. "
+            "Red cells highlight pairs that tend to fall together, amplifying drawdown risk.",
+        )
         corr = prices.pct_change().dropna().corr()
         fig2 = go.Figure(go.Heatmap(
             z=corr.values,
@@ -257,7 +304,12 @@ def render_analytics(r: dict, ef_fn, stats_fn, mc_fn=None) -> None:
         st.plotly_chart(fig2, use_container_width=True)
 
     # Risk Attribution
-    st.markdown("### RISK ATTRIBUTION — MARGINAL CONTRIBUTION TO PORTFOLIO VOLATILITY")
+    _titled(
+        "RISK ATTRIBUTION — MARGINAL CONTRIBUTION TO PORTFOLIO VOLATILITY",
+        "Shows how much each asset contributes to total portfolio volatility, accounting for its weight and correlation to every other holding. "
+        "A long bar means that asset is the primary driver of portfolio risk — not just because it is volatile individually, but because it moves with the rest. "
+        "If one asset dominates, consider reducing its weight to distribute risk more evenly.",
+    )
     rets    = prices.pct_change().dropna()
     cov_ann = rets.cov() * 252
     active  = {t: w for t, w in weights.items() if t in cov_ann.columns}
@@ -288,7 +340,12 @@ def render_analytics(r: dict, ef_fn, stats_fn, mc_fn=None) -> None:
     # ── Monte Carlo ────────────────────────────────────────────────────────────
     if mc_fn is not None:
         st.markdown("---")
-        st.markdown("### MONTE CARLO FORWARD SIMULATION")
+        _titled(
+            "MONTE CARLO FORWARD SIMULATION",
+            "Runs thousands of simulated futures by randomly re-sampling historical daily returns and compounding them forward. "
+            "The shaded bands show the spread of outcomes — the wider the band, the more uncertain the path. "
+            "The solid amber line (P50) is the median expectation: half of all simulations ended above it, half below.",
+        )
         mc_c1, mc_c2, _ = st.columns([1, 1, 4])
         with mc_c1:
             horizon = st.selectbox(
@@ -353,10 +410,22 @@ def render_analytics(r: dict, ef_fn, stats_fn, mc_fn=None) -> None:
         prob_pos = float(np.mean(
             [mc["p50"][-1]] * n_sims  # approximation using percentile bands
         ) > 100)
-        mc1.metric(f"P10 ({horizon}Y)", f"{final_p10:.2%}", help="Pessimistic: 10% of runs ended below this")
-        mc2.metric(f"Median ({horizon}Y)", f"{final_p50:.2%}", help="Middle outcome")
-        mc3.metric(f"P90 ({horizon}Y)", f"{final_p90:.2%}", help="Optimistic: 90% of runs ended below this")
-        mc4.metric("Return Range", f"{final_p10:.1%} → {final_p90:.1%}")
+        mc1.metric(
+            f"P10 ({horizon}Y)", f"{final_p10:.2%}",
+            help=f"Pessimistic scenario: 10% of the {n_sims:,} simulated paths ended below this value at the {horizon}-year horizon.",
+        )
+        mc2.metric(
+            f"Median ({horizon}Y)", f"{final_p50:.2%}",
+            help=f"Middle outcome: half of the {n_sims:,} simulated paths ended above this value, half below.",
+        )
+        mc3.metric(
+            f"P90 ({horizon}Y)", f"{final_p90:.2%}",
+            help=f"Optimistic scenario: 90% of the {n_sims:,} simulated paths ended below this value — only 1-in-10 runs beat it.",
+        )
+        mc4.metric(
+            "Return Range", f"{final_p10:.1%} → {final_p90:.1%}",
+            help="The full spread from the pessimistic (P10) to optimistic (P90) outcome, showing the uncertainty in projected returns.",
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -366,6 +435,12 @@ def render_backtest(r: dict, bt_fn) -> None:
     prices  = r["prices"]
     weights = {k: v for k, v in r["weights"].items() if v > 0.0001}
 
+    _titled(
+        "BACKTEST PERFORMANCE",
+        "Shows the historical performance of your optimised portfolio, indexed to 100 at the start of the lookback period — a value of 150 means a 50% cumulative gain. "
+        "The dashed benchmark line lets you see whether your portfolio outperformed the market over the same window. "
+        "Note: this applies the optimizer's weights backward through history, not a live trading record.",
+    )
     bm_col1, _ = st.columns([2, 5])
     with bm_col1:
         benchmark = st.selectbox("Benchmark", ["SPY", "QQQ", "IWM", "BND", "None"], index=0)
@@ -395,14 +470,23 @@ def render_backtest(r: dict, bt_fn) -> None:
 
     port_total = float(bt["Portfolio"].iloc[-1]) / 100 - 1
     bk1, bk2, bk3 = st.columns(3)
-    bk1.metric("Portfolio Total Return", f"{port_total:.2%}")
+    bk1.metric(
+        "Portfolio Total Return", f"{port_total:.2%}",
+        help="Cumulative gain from the start to the end of the lookback period, using the optimised weights applied backward through history.",
+    )
     if len(bt.columns) > 1:
         bm_name   = bt.columns[1]
         bm_total  = float(bt[bm_name].iloc[-1]) / 100 - 1
         alpha     = port_total - bm_total
-        bk2.metric(f"Benchmark ({bm_name}) Return", f"{bm_total:.2%}")
-        bk3.metric("Active Return (Alpha)", f"{alpha:.2%}",
-                   delta=f"{alpha:.2%}", delta_color="normal")
+        bk2.metric(
+            f"Benchmark ({bm_name}) Return", f"{bm_total:.2%}",
+            help=f"Cumulative return for {bm_name} over the identical lookback window, for direct comparison.",
+        )
+        bk3.metric(
+            "Active Return (Alpha)", f"{alpha:.2%}",
+            delta=f"{alpha:.2%}", delta_color="normal",
+            help="Portfolio Total Return minus Benchmark Return. Positive alpha means the optimised weights outperformed simply buying the index.",
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -416,7 +500,13 @@ def render_holdings(r: dict, stats_fn, rb_fn=None) -> None:
     with st.spinner("Computing asset statistics..."):
         stats = stats_fn(prices, rfr_v)
 
-    st.markdown("### INDIVIDUAL ASSET ANALYSIS")
+    _titled(
+        "INDIVIDUAL ASSET ANALYSIS",
+        "Per-asset performance metrics calculated from raw price history over the lookback period. "
+        "Ann. Return and Volatility are annualised. Sharpe measures return per unit of total risk; "
+        "Sortino is similar but only penalises downside volatility — a higher Sortino than Sharpe means most volatility is on the upside. "
+        "Max Drawdown is the worst peak-to-trough loss that asset suffered individually.",
+    )
     ec1, ec2 = st.columns([5, 1])
     with ec2:
         st.markdown('<div class="qv-dl">', unsafe_allow_html=True)
@@ -437,7 +527,12 @@ def render_holdings(r: dict, stats_fn, rb_fn=None) -> None:
         st.dataframe(display, use_container_width=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("### SHARPE RATIO COMPARISON")
+    _titled(
+        "SHARPE RATIO COMPARISON",
+        "Ranks every asset by its individual Sharpe Ratio — excess return divided by volatility. "
+        "Green bars (≥ 1.0) indicate strong risk-adjusted performance; amber (0.5–1.0) is acceptable; red (< 0.5) means the asset is poorly compensating you for the risk taken. "
+        "The dashed line marks the 1.0 threshold — a common benchmark for a good standalone investment.",
+    )
     sharpe_s = stats["Sharpe"].sort_values(ascending=True)
     bar_cols = [GREEN if v >= 1.0 else ACCENT if v >= 0.5 else RED for v in sharpe_s.values]
 
@@ -455,21 +550,15 @@ def render_holdings(r: dict, stats_fn, rb_fn=None) -> None:
                      line=dict(color=GREEN, width=1.5, dash="dot"))],
     )
     st.plotly_chart(fig4, use_container_width=True)
-    st.markdown(
-        "<div style='color:#6b7a8d;font-size:.6rem;margin-top:-8px;'>"
-        "DASHED LINE AT SHARPE = 1.0 (STRONG RISK-ADJUSTED RETURN THRESHOLD)</div>",
-        unsafe_allow_html=True,
-    )
 
     # ── Rebalancing Drift ──────────────────────────────────────────────────────
     if rb_fn is not None:
         st.markdown("---")
-        st.markdown("### REBALANCING DRIFT — 1-YEAR LOOKBACK")
-        st.markdown(
-            "<div style='color:#6b7a8d;font-size:.65rem;margin-bottom:8px;'>"
-            "Shows how your target weights have drifted due to price movements over the "
-            "past year. Green = underweight (BUY). Red = overweight (SELL).</div>",
-            unsafe_allow_html=True,
+        _titled(
+            "REBALANCING DRIFT — 1-YEAR LOOKBACK",
+            "Shows how your target weights have drifted due to price movements over the past year. "
+            "A positive bar means that asset grew faster than the rest and is now overweight — sell to trim back to target. "
+            "A negative bar means it underperformed and is now underweight — buy to top up. Bars within ±0.5% are labelled HOLD.",
         )
 
         drift_df = rb_fn(prices, tuple(sorted(weights.items())))
@@ -515,6 +604,107 @@ def render_holdings(r: dict, stats_fn, rb_fn=None) -> None:
             # Table
             tbl = drift_df.copy()
             tbl["Target %"]  = tbl["Target %"].map(lambda x: f"{x:.2%}")
-            tbl["Current %"] = tbl["Current %"].map(lambda x: f"{x:.2%}")
-            tbl["Drift"]     = tbl["Drift"].map(lambda x: f"{x:+.2%}")
+            tbl["Current %"] = tbl["Current %"].map(lambda x: f"{x:.2%}" if pd.notna(x) else "N/A")
+            tbl["Drift"]     = tbl["Drift"].map(lambda x: f"{x:+.2%}" if pd.notna(x) else "N/A")
+            _titled(
+                "REBALANCING ACTIONS",
+                "Target % is the optimizer's recommended weight. Current % is where that position sits today after a year of price movement. "
+                "Drift is the gap — the amount you would need to trade to restore the optimal allocation.",
+            )
             st.dataframe(tbl, use_container_width=True)
+
+    # ── Trading History ────────────────────────────────────────────────────────
+    st.markdown("---")
+    _titled(
+        "TRADING HISTORY",
+        "Log your trades to track cost basis and unrealised P&amp;L against live prices. "
+        "Add one row per trade — partial fills and multiple lots per ticker are supported. "
+        "Prices refresh every 5 minutes; the P&amp;L table updates automatically as you add rows.",
+    )
+
+    default_trade_cols = {
+        "Date": pd.Series(dtype="str"),
+        "Ticker": pd.Series(dtype="str"),
+        "Qty": pd.Series(dtype="float"),
+        "Buy Price": pd.Series(dtype="float"),
+    }
+    existing = st.session_state.get("trade_history_data", pd.DataFrame(default_trade_cols))
+
+    edited_trades = st.data_editor(
+        existing,
+        num_rows="dynamic",
+        column_config={
+            "Date": st.column_config.DateColumn("Date Purchased", format="YYYY-MM-DD"),
+            "Ticker": st.column_config.TextColumn("Ticker Symbol"),
+            "Qty": st.column_config.NumberColumn("Quantity", min_value=0, format="%.4f"),
+            "Buy Price": st.column_config.NumberColumn("Buy Price ($)", min_value=0, format="%.4f"),
+        },
+        use_container_width=True,
+        key="trade_editor",
+    )
+    st.session_state["trade_history_data"] = edited_trades
+
+    valid_trades = edited_trades.dropna(subset=["Ticker", "Qty", "Buy Price"])
+    valid_trades = valid_trades[
+        valid_trades["Ticker"].astype(str).str.strip().ne("") &
+        (valid_trades["Qty"] > 0) &
+        (valid_trades["Buy Price"] > 0)
+    ]
+
+    if not valid_trades.empty:
+        unique_tks = [t.strip().upper() for t in valid_trades["Ticker"].unique()]
+
+        @st.cache_data(ttl=300, show_spinner=False)
+        def _fetch_current(tickers_key: tuple) -> dict:
+            prices_out: dict[str, float | None] = {}
+            for t in tickers_key:
+                try:
+                    raw = yf.download(t, period="5d", auto_adjust=True, progress=False)
+                    if not raw.empty:
+                        close = raw["Close"] if "Close" in raw.columns else raw.iloc[:, 0]
+                        prices_out[t] = float(close.dropna().iloc[-1])
+                    else:
+                        prices_out[t] = None
+                except Exception:
+                    prices_out[t] = None
+            return prices_out
+
+        with st.spinner("Fetching current prices..."):
+            cur_prices = _fetch_current(tuple(sorted(unique_tks)))
+
+        rows = []
+        for _, row in valid_trades.iterrows():
+            ticker   = str(row["Ticker"]).strip().upper()
+            qty      = float(row["Qty"])
+            buy_px   = float(row["Buy Price"])
+            cur      = cur_prices.get(ticker)
+            cost     = qty * buy_px
+            if cur is not None:
+                cur_val  = qty * cur
+                pnl      = cur_val - cost
+                pnl_pct  = pnl / cost if cost > 0 else 0.0
+                cur_str  = f"${cur:,.4f}"
+                cv_str   = f"${cur_val:,.2f}"
+                pnl_str  = f"${pnl:+,.2f}"
+                pct_str  = f"{pnl_pct:+.2%}"
+            else:
+                cur_str = cv_str = pnl_str = pct_str = "N/A"
+            rows.append({
+                "Ticker":        ticker,
+                "Date":          str(row.get("Date", "")),
+                "Qty":           qty,
+                "Buy Price":     f"${buy_px:,.4f}",
+                "Current Price": cur_str,
+                "Cost Basis":    f"${cost:,.2f}",
+                "Current Value": cv_str,
+                "P&L ($)":       pnl_str,
+                "P&L (%)":       pct_str,
+            })
+
+        pnl_df = pd.DataFrame(rows)
+        _titled(
+            "P&amp;L SUMMARY",
+            "Cost Basis is the total amount paid (Qty × Buy Price). Current Value is what that position is worth at the latest closing price. "
+            "P&amp;L ($) and P&amp;L (%) show your unrealised gain or loss — positive means the position is in profit.",
+        )
+        st.dataframe(pnl_df, use_container_width=True, hide_index=True)

@@ -38,6 +38,7 @@ StocksBro applies Harry Markowitz's Modern Portfolio Theory to find optimal port
 - **Per-asset statistics** — annualised return, volatility, Sharpe, Sortino, max drawdown
 - **Sharpe ratio comparison** — visual bar chart across all assets
 - **Rebalancing drift** — shows how weights have drifted over 1 year with BUY/SELL signals
+- **Trading history & P&L** — log trades with quantity and buy price; live current prices fetched automatically to show cost basis, current value, and unrealised P&L per position
 
 ### Guide
 - Built-in educational tab covering MPT concepts, strategies, and methodology
@@ -56,7 +57,7 @@ StocksBro applies Harry Markowitz's Modern Portfolio Theory to find optimal port
 | Risk-free rate | Configurable 0–10% (default 4.0%) |
 | Solver | CVXPY / CLARABEL (via PyPortfolioOpt) |
 
-Tickers with no available data are silently dropped. A minimum of 2 valid tickers is required.
+Tickers with no available data are silently dropped. A minimum of 2 valid tickers is required. Weight constraints are validated before solving — if the combination of min/max weights and number of assets is mathematically infeasible, a clear error message is shown explaining the conflict.
 
 ---
 

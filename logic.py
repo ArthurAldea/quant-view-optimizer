@@ -1,4 +1,4 @@
-"""Quant-View Optimizer — Core Engine v2.1
+"""Quant-View Optimizer — Core Engine v2.2
 Portfolio optimization, analytics, and backtesting using PyPortfolioOpt.
 """
 import requests
@@ -11,7 +11,7 @@ from pypfopt import black_litterman as bl_utils
 from pypfopt.black_litterman import BlackLittermanModel
 
 RISK_FREE_RATE = 0.04   # 4.0% — 2026 default
-LOOKBACK_YEARS = 3
+LOOKBACK_YEARS = 10
 
 STRATEGIES = {
     "Max Sharpe Ratio":  "max_sharpe",
@@ -207,6 +207,20 @@ def optimise(
     mu, prices_opt = _compute_mu(prices, returns_model, rfr, lookback_years)
     S = CovarianceShrinkage(prices_opt).ledoit_wolf()
 
+    n_assets = len(mu)
+    if weight_max * n_assets < 1.0 - 1e-9:
+        raise ValueError(
+            f"Infeasible constraints: {n_assets} assets × max {weight_max:.0%}/position = "
+            f"{n_assets * weight_max:.0%} < 100%. "
+            f"Raise max per position to at least {100 / n_assets:.0f}%."
+        )
+    if weight_min * n_assets > 1.0 + 1e-9:
+        raise ValueError(
+            f"Infeasible constraints: {n_assets} assets × min {weight_min:.0%}/position = "
+            f"{n_assets * weight_min:.0%} > 100%. "
+            f"Lower min per position to at most {100 / n_assets:.0f}%."
+        )
+
     ef = EfficientFrontier(mu, S, weight_bounds=(weight_min, weight_max))
     if strategy == "max_sharpe":
         ef.max_sharpe(risk_free_rate=rfr)
@@ -353,7 +367,9 @@ def rebalancing_drift(prices: pd.DataFrame, target_weights: dict) -> pd.DataFram
         return pd.DataFrame()
 
     tks = list(active.keys())
-    window = prices[tks].tail(252)
+    window = prices[tks].tail(252).ffill().dropna()
+    if window.empty or len(window) < 2:
+        return pd.DataFrame()
     tw = np.array([active[t] for t in tks])
 
     growth = (window.iloc[-1] / window.iloc[0]).values
