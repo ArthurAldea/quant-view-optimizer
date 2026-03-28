@@ -86,31 +86,33 @@ button[data-baseweb="tab"][aria-selected="true"]{background:#f5a623!important;
   color:#020c18!important;border-color:#f5a623!important;}
 [data-testid="stDataFrame"]{border:1px solid #1e3a5f!important;border-radius:2px;}
 hr{border-color:#1e2d45;margin:5px 0;}
-.qv-label{color:#6b7a8d;font-size:.6rem;text-transform:uppercase;
+.qv-label{color:#8a97a8;font-size:.68rem;text-transform:uppercase;
   letter-spacing:.12em;margin-bottom:3px;margin-top:10px;}
 .qv-status{background:#040f20;border:1px solid #1e3a5f;border-radius:2px;
-  padding:5px 14px;font-size:.67rem;color:#6b7a8d;display:flex;
+  padding:6px 14px;font-size:.75rem;color:#8a97a8;display:flex;
   flex-wrap:wrap;gap:20px;margin-bottom:12px;}
 .ok{color:#39d353;font-weight:700;}.warn{color:#f5a623;font-weight:700;}
 .neg{color:#ff4444;font-weight:700;}
 .qv-landing{padding:30px 10px;}
 .qv-feat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;
   max-width:960px;margin:0 auto;}
+@media(max-width:720px){.qv-feat-grid{grid-template-columns:repeat(2,1fr);}}
 .qv-feat{background:#040f20;border:1px solid #1e3a5f;border-radius:2px;
   padding:16px 14px;text-align:center;}
-.qv-feat-icon{font-size:1.5rem;margin-bottom:8px;}
-.qv-feat-title{color:#f5a623;font-size:.68rem;font-weight:700;
+.qv-feat-icon{font-size:1.1rem;font-weight:700;color:#f5a623;
+  letter-spacing:.06em;margin-bottom:8px;}
+.qv-feat-title{color:#f5a623;font-size:.72rem;font-weight:700;
   letter-spacing:.1em;margin-bottom:5px;}
-.qv-feat-desc{color:#6b7a8d;font-size:.6rem;line-height:1.7;}
-.qv-landing-cta{text-align:center;margin-top:24px;color:#2a4060;
-  font-size:.75rem;letter-spacing:.12em;}
+.qv-feat-desc{color:#8a97a8;font-size:.7rem;line-height:1.7;}
+.qv-landing-cta{text-align:center;margin-top:24px;color:#8a97a8;
+  font-size:.78rem;letter-spacing:.12em;}
 [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"]{
   flex:1 1 0%!important;min-width:0!important;}
 [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton{
   width:100%!important;}
 [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] button{
   background:#040f20!important;color:#c8cdd4!important;
-  border:1px solid #1e3a5f!important;font-size:.58rem!important;
+  border:1px solid #1e3a5f!important;font-size:.65rem!important;
   padding:0!important;letter-spacing:.02em!important;
   height:32px!important;min-height:32px!important;max-height:32px!important;
   width:100%!important;white-space:nowrap!important;overflow:hidden!important;
@@ -131,17 +133,18 @@ details summary{color:#f5a623!important;font-size:.72rem!important;
   font-weight:700!important;letter-spacing:.1em!important;cursor:pointer;}
 details{background:#040f20!important;border:1px solid #1e3a5f!important;
   border-radius:2px!important;padding:10px 14px!important;margin:6px 0!important;}
-/* Hover tooltips on section headings */
+/* Hover/focus tooltips on section headings */
 .qv-tip{position:relative;display:inline-block;cursor:help;}
+.qv-tip:focus{outline:1px dashed rgba(245,166,35,0.5);outline-offset:2px;}
 .qv-tip-box{visibility:hidden;opacity:0;pointer-events:none;
   background:#040f20;border:1px solid #f5a623;color:#c8cdd4;
-  font-family:'Courier New',monospace;font-size:.63rem;line-height:1.7;
+  font-family:'Courier New',monospace;font-size:.7rem;line-height:1.7;
   font-weight:400;letter-spacing:0;text-transform:none;
   padding:8px 12px;border-radius:2px;
   position:absolute;z-index:9999;width:340px;
   bottom:130%;left:0;
   transition:opacity .15s ease;}
-.qv-tip:hover .qv-tip-box{visibility:visible;opacity:1;}
+.qv-tip:hover .qv-tip-box,.qv-tip:focus .qv-tip-box{visibility:visible;opacity:1;}
 </style>""", unsafe_allow_html=True)
 
 ACCENT = "#f5a623"
@@ -371,13 +374,13 @@ with st.sidebar:
                     st.session_state["ticker_input"] = st.session_state.saved_portfolios[pname]
                     st.rerun()
             with lc3:
-                if st.button("✕", key=f"del_{pname}"):
+                if st.button("DEL", key=f"del_{pname}"):
                     del st.session_state.saved_portfolios[pname]
                     st.rerun()
         json_export = json.dumps(st.session_state.saved_portfolios, indent=2)
         st.markdown('<div class="qv-dl">', unsafe_allow_html=True)
         st.download_button(
-            "⬇ EXPORT SAVED",
+            "↓ EXPORT SAVED",
             data=json_export,
             file_name="quant_view_portfolios.json",
             mime="application/json",
@@ -424,14 +427,14 @@ if run:
     st.session_state["result_params"] = None
     try:
         with st.status("◈ Computing portfolio...", expanded=True) as _status:
-            _status.write("📡 Fetching adjusted close prices from Yahoo Finance...")
+            _status.write("[DATA] Fetching adjusted close prices from Yahoo Finance...")
             result = _run_opt(
                 tuple(tickers), strategy, rfr, lookback, w_min, w_max,
                 returns_model, base_currency,
             )
-            _status.write(f"📐 Covariance estimated — Ledoit-Wolf shrinkage ({returns_model_label})")
-            _status.write("⚡ Efficient frontier solved — CVXPY · CLARABEL")
-            _status.write("🏷  Fetching company names...")
+            _status.write(f"[COV]  Covariance estimated — Ledoit-Wolf shrinkage ({returns_model_label})")
+            _status.write("[OPT]  Efficient frontier solved — CVXPY · CLARABEL")
+            _status.write("[INFO] Fetching company names...")
             active_tks = tuple(t for t, w in result["weights"].items() if w > 0.0001)
             company_names = _get_names(active_tks)
             _status.update(label="◈ Portfolio optimized  ✓", state="complete", expanded=False)

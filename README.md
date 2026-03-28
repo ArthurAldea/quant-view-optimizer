@@ -46,6 +46,26 @@ StocksBro applies Harry Markowitz's Modern Portfolio Theory to find optimal port
 
 ---
 
+## UI Design
+
+StocksBro uses a Bloomberg Terminal-inspired dark interface built entirely with custom CSS over Streamlit.
+
+| Token | Value |
+|-------|-------|
+| Background | `#020c18` (near-black navy) |
+| Panel | `#040f20` |
+| Accent | `#f5a623` (amber/gold) |
+| Text | `#c8cdd4` |
+| Font | Courier New (monospace throughout) |
+
+Key design principles applied:
+- **Accessible contrast** — all label and body text meets WCAG AA contrast ratios against panel backgrounds
+- **No emoji icons** — feature cards and status messages use terminal-style text tokens (`[EF]`, `[OPT]`, `[BT]`, `[RA]`, `[DATA]`, etc.) consistent with the monospace aesthetic
+- **Responsive landing grid** — the 4-column feature grid collapses to 2 columns on narrow viewports
+- **Keyboard-accessible tooltips** — section heading tooltips (`ⓘ`) trigger on both hover and keyboard focus (`tabindex="0"`)
+
+---
+
 ## Methodology
 
 | Parameter | Value |

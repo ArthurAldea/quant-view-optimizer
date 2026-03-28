@@ -41,13 +41,14 @@ def _pl(**kw) -> dict:
 
 
 def _titled(title: str, tooltip: str) -> None:
-    """Render a section heading that reveals a tooltip on hover."""
+    """Render a section heading that reveals a tooltip on hover or focus."""
     st.markdown(
-        f"<div class='qv-tip' style='margin:0.8rem 0 0.4rem;'>"
+        f"<div class='qv-tip' tabindex='0' role='button' aria-label='{title} — hover or focus for details'"
+        f" style='margin:0.8rem 0 0.4rem;'>"
         f"<span style='color:#f5a623;font-size:.82rem;font-weight:700;"
         f"letter-spacing:.06em;border-bottom:1px dashed rgba(245,166,35,0.45);'>"
         f"{title} <span style='font-size:.65rem;opacity:.7;'>ⓘ</span></span>"
-        f"<div class='qv-tip-box'>{tooltip}</div>"
+        f"<div class='qv-tip-box' role='tooltip'>{tooltip}</div>"
         f"</div>",
         unsafe_allow_html=True,
     )
@@ -58,25 +59,25 @@ def landing(msg: str) -> None:
         f"""<div class='qv-landing'>
         <div class='qv-feat-grid'>
           <div class='qv-feat'>
-            <div class='qv-feat-icon'>📐</div>
+            <div class='qv-feat-icon'>[EF]</div>
             <div class='qv-feat-title'>EFFICIENT FRONTIER</div>
             <div class='qv-feat-desc'>Visualize the full opportunity set of optimal portfolios
               from min-vol to max-return</div>
           </div>
           <div class='qv-feat'>
-            <div class='qv-feat-icon'>⚡</div>
+            <div class='qv-feat-icon'>[OPT]</div>
             <div class='qv-feat-title'>3 STRATEGIES</div>
             <div class='qv-feat-desc'>Max Sharpe, Min Volatility, or Max Quadratic Utility
               with configurable weight constraints</div>
           </div>
           <div class='qv-feat'>
-            <div class='qv-feat-icon'>🔁</div>
+            <div class='qv-feat-icon'>[BT]</div>
             <div class='qv-feat-title'>BACKTESTING</div>
             <div class='qv-feat-desc'>Historical equity curve vs SPY, QQQ, IWM
               with alpha calculation</div>
           </div>
           <div class='qv-feat'>
-            <div class='qv-feat-icon'>📊</div>
+            <div class='qv-feat-icon'>[RA]</div>
             <div class='qv-feat-title'>RISK ANALYTICS</div>
             <div class='qv-feat-desc'>Correlation heatmap, marginal risk attribution,
               Sharpe, Sortino, max drawdown per asset</div>
@@ -192,7 +193,7 @@ def render_optimizer(
         csv_w = df.to_csv(index=False).encode("utf-8")
         st.markdown('<div class="qv-dl">', unsafe_allow_html=True)
         st.download_button(
-            "⬇  EXPORT WEIGHTS  CSV",
+            "↓  EXPORT WEIGHTS  CSV",
             data=csv_w,
             file_name="quant_view_weights.csv",
             mime="text/csv",
@@ -511,7 +512,7 @@ def render_holdings(r: dict, stats_fn, rb_fn=None) -> None:
     with ec2:
         st.markdown('<div class="qv-dl">', unsafe_allow_html=True)
         st.download_button(
-            "⬇ CSV",
+            "↓ CSV",
             data=stats.reset_index().to_csv(index=False).encode("utf-8"),
             file_name="quant_view_holdings.csv",
             mime="text/csv",
