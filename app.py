@@ -208,7 +208,6 @@ def _run_mc(prices: pd.DataFrame, weights_key: tuple, horizon: int, n_sims: int)
     return monte_carlo(prices, dict(weights_key), horizon, n_sims)
 
 
-@st.cache_data(ttl=3600, show_spinner=False)
 def _run_rb(
     prices: pd.DataFrame,
     weights_key: tuple,
