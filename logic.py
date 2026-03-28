@@ -360,29 +360,49 @@ def monte_carlo(
     }
 
 
-def rebalancing_drift(prices: pd.DataFrame, target_weights: dict) -> pd.DataFrame:
-    """Show how weights drifted from target over the past year and required trades."""
+def rebalancing_drift(
+    prices: pd.DataFrame,
+    target_weights: dict,
+    current_weights: dict | None = None,
+) -> pd.DataFrame:
+    """Show how weights drifted from target and required trades.
+
+    If current_weights is provided (from real trading history), those are used
+    directly as the actual portfolio weights instead of simulating price-driven drift.
+    current_weights should map ticker → portfolio weight fraction (sum ≈ 1.0).
+    """
     active = {t: w for t, w in target_weights.items() if w > 0.0001 and t in prices.columns}
     if not active:
         return pd.DataFrame()
 
     tks = list(active.keys())
-    window = prices[tks].tail(252).ffill().dropna()
-    if window.empty or len(window) < 2:
-        return pd.DataFrame()
     tw = np.array([active[t] for t in tks])
 
-    growth = (window.iloc[-1] / window.iloc[0]).values
-    current_values = tw * growth
-    current_weights = current_values / current_values.sum()
-    drift = current_weights - tw
+    if current_weights is not None:
+        # Use caller-supplied weights (from real trade history)
+        cw = np.array([current_weights.get(t, 0.0) for t in tks])
+        total = cw.sum()
+        if total > 0:
+            cw = cw / total
+        else:
+            cw = tw.copy()
+    else:
+        # Simulate drift from price movements over the past year
+        window = prices[tks].tail(252).ffill().dropna()
+        if window.empty or len(window) < 2:
+            return pd.DataFrame()
+        growth = (window.iloc[-1] / window.iloc[0]).values
+        current_values = tw * growth
+        cw = current_values / current_values.sum()
+
+    drift = cw - tw
 
     rows = []
     for i, t in enumerate(tks):
         d = float(drift[i])
         rows.append({
             "Target %": float(tw[i]),
-            "Current %": float(current_weights[i]),
+            "Current %": float(cw[i]),
             "Drift": d,
             "Action": "SELL" if d > 0.005 else "BUY" if d < -0.005 else "HOLD",
         })

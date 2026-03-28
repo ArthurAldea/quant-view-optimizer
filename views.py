@@ -554,14 +554,26 @@ def render_holdings(r: dict, stats_fn, rb_fn=None) -> None:
     # ── Rebalancing Drift ──────────────────────────────────────────────────────
     if rb_fn is not None:
         st.markdown("---")
-        _titled(
-            "REBALANCING DRIFT — 1-YEAR LOOKBACK",
-            "Shows how your target weights have drifted due to price movements over the past year. "
-            "A positive bar means that asset grew faster than the rest and is now overweight — sell to trim back to target. "
-            "A negative bar means it underperformed and is now underweight — buy to top up. Bars within ±0.5% are labelled HOLD.",
-        )
+        holdings_active = bool(st.session_state.get("holdings_current_weights"))
+        if holdings_active:
+            _titled(
+                "REBALANCING DRIFT — MY HOLDINGS",
+                "Current weights are derived from your actual trade history: Qty × current price → portfolio fraction. "
+                "Drift shows the gap between what you actually hold today vs the optimizer's target weight. "
+                "BUY means you are underweight vs target; SELL means overweight. Bars within ±0.5% are labelled HOLD.",
+            )
+        else:
+            _titled(
+                "REBALANCING DRIFT — 1-YEAR LOOKBACK",
+                "Shows how your target weights have drifted due to price movements over the past year. "
+                "A positive bar means that asset grew faster than the rest and is now overweight — sell to trim back to target. "
+                "A negative bar means it underperformed and is now underweight — buy to top up. Bars within ±0.5% are labelled HOLD. "
+                "Log trades in the Trading History section below and toggle 'Use my holdings' for real BUY/SELL guidance.",
+            )
 
-        drift_df = rb_fn(prices, tuple(sorted(weights.items())))
+        holdings_cw = st.session_state.get("holdings_current_weights")
+        cw_key = tuple(sorted(holdings_cw.items())) if holdings_cw else None
+        drift_df = rb_fn(prices, tuple(sorted(weights.items())), cw_key)
 
         if not drift_df.empty:
             drift_colors_bar = [
@@ -708,3 +720,34 @@ def render_holdings(r: dict, stats_fn, rb_fn=None) -> None:
             "P&amp;L ($) and P&amp;L (%) show your unrealised gain or loss — positive means the position is in profit.",
         )
         st.dataframe(pnl_df, use_container_width=True, hide_index=True)
+
+        # ── Holdings → Rebalancing feed-in ────────────────────────────────────
+        use_holdings = st.toggle(
+            "Use my holdings as current weights for rebalancing",
+            value=False,
+            help=(
+                "When enabled, your trade log above is used to compute your actual current "
+                "portfolio weights (Qty × current price → portfolio fraction). "
+                "The rebalancing drift chart above will then show the gap between what you "
+                "actually hold vs the optimizer's target — giving you real BUY/SELL guidance."
+            ),
+        )
+        if use_holdings:
+            # Build current_weights from trades × live prices
+            holdings_value: dict[str, float] = {}
+            for _, row in valid_trades.iterrows():
+                ticker = str(row["Ticker"]).strip().upper()
+                qty    = float(row["Qty"])
+                cur    = cur_prices.get(ticker)
+                if cur is not None and cur > 0:
+                    holdings_value[ticker] = holdings_value.get(ticker, 0.0) + qty * cur
+            total_val = sum(holdings_value.values())
+            if total_val > 0:
+                st.session_state["holdings_current_weights"] = {
+                    t: v / total_val for t, v in holdings_value.items()
+                }
+            else:
+                st.session_state["holdings_current_weights"] = None
+                st.warning("No valid current prices found for your holdings — toggle disabled.")
+        else:
+            st.session_state["holdings_current_weights"] = None

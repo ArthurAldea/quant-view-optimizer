@@ -206,8 +206,13 @@ def _run_mc(prices: pd.DataFrame, weights_key: tuple, horizon: int, n_sims: int)
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
-def _run_rb(prices: pd.DataFrame, weights_key: tuple) -> pd.DataFrame:
-    return rebalancing_drift(prices, dict(weights_key))
+def _run_rb(
+    prices: pd.DataFrame,
+    weights_key: tuple,
+    current_weights_key: tuple | None = None,
+) -> pd.DataFrame:
+    cw = dict(current_weights_key) if current_weights_key else None
+    return rebalancing_drift(prices, dict(weights_key), cw)
 
 
 @st.cache_data(ttl=86400, show_spinner=False)

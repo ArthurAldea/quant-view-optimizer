@@ -37,8 +37,9 @@ StocksBro applies Harry Markowitz's Modern Portfolio Theory to find optimal port
 ### Holdings
 - **Per-asset statistics** — annualised return, volatility, Sharpe, Sortino, max drawdown
 - **Sharpe ratio comparison** — visual bar chart across all assets
-- **Rebalancing drift** — shows how weights have drifted over 1 year with BUY/SELL signals
+- **Rebalancing drift** — shows weight drift over 1 year with BUY/SELL/HOLD signals; toggle **"Use my holdings as current weights"** to replace simulated drift with your actual portfolio fractions derived from the trade log
 - **Trading history & P&L** — log trades with quantity and buy price; live current prices fetched automatically to show cost basis, current value, and unrealised P&L per position
+- **Holdings-driven rebalancing** — enable the toggle after the P&L table to feed real holdings (Qty × current price → portfolio weight) into the rebalancing engine, producing actionable BUY/SELL guidance against the optimizer's target
 
 ### Guide
 - Built-in educational tab covering MPT concepts, strategies, and methodology
