@@ -306,13 +306,15 @@ def render_optimizer(
             text=[f"{v:.1%}" for _, v in sorted_w],
             textposition="outside",
             textfont=dict(size=11, color=TEXT),
+            cliponaxis=False,
             hovertemplate="<b>%{y}</b><br>Weight: %{x:.1%}<extra></extra>",
         ))
         fig_bar.update_layout(
             **_pl(
                 height=max(160, 28 + len(sorted_w) * 32),
-                margin=dict(t=8, b=8, l=10, r=60),
-                xaxis=dict(**_PL_BASE["xaxis"], tickformat=".0%", showgrid=True),
+                margin=dict(t=8, b=8, l=10, r=10),
+                xaxis=dict(**_PL_BASE["xaxis"], tickformat=".0%", showgrid=True,
+                           range=[0, 1.18]),
                 yaxis=dict(tickfont=dict(size=11), showgrid=False),
             ),
             showlegend=False,
@@ -658,6 +660,52 @@ def render_backtest(r: dict, bt_fn) -> None:
                    font=dict(size=11, color=ACCENT), x=0.0),
     )
     st.plotly_chart(fig, use_container_width=True)
+
+    # ── Drawdown chart ─────────────────────────────────────────────────────────
+    _titled(
+        "PORTFOLIO DRAWDOWN",
+        "Shows how far the portfolio sits below its prior all-time high at each point in time. "
+        "A value of −20% means the portfolio was 20% below its previous peak on that date. "
+        "The dotted line marks the maximum drawdown over the full period. "
+        "Shallow, short drawdowns indicate a more resilient strategy.",
+    )
+    port_vals   = bt["Portfolio"]
+    running_max = port_vals.cummax()
+    drawdown    = (port_vals - running_max) / running_max * 100
+
+    max_dd_val = float(drawdown.min())
+    max_dd_idx = drawdown.idxmin()
+
+    fig_dd = go.Figure()
+    fig_dd.add_trace(go.Scatter(
+        x=drawdown.index, y=drawdown,
+        mode="lines", name="Drawdown",
+        fill="tozeroy", fillcolor="rgba(255,68,68,0.15)",
+        line=dict(color=RED, width=1.5),
+        hovertemplate="%{x|%Y-%m-%d}: %{y:.2f}%<extra></extra>",
+    ))
+    fig_dd.add_shape(
+        type="line",
+        x0=drawdown.index[0], x1=drawdown.index[-1],
+        y0=max_dd_val, y1=max_dd_val,
+        line=dict(color=RED, width=1, dash="dot"),
+    )
+    fig_dd.add_annotation(
+        x=max_dd_idx, y=max_dd_val,
+        text=f"MAX  {max_dd_val:.2f}%",
+        showarrow=True, arrowhead=2, arrowcolor=RED,
+        font=dict(color=RED, size=11),
+        bgcolor=PANEL, bordercolor=RED, borderwidth=1,
+        ax=40, ay=-30,
+    )
+    fig_dd.update_layout(
+        **_pl(height=240, xaxis_title="Date", yaxis_title="Drawdown (%)",
+              hovermode="x unified"),
+        title=dict(text="PORTFOLIO DRAWDOWN FROM PEAK",
+                   font=dict(size=11, color=ACCENT), x=0.0),
+        yaxis=dict(**_PL_BASE["yaxis"], ticksuffix="%"),
+    )
+    st.plotly_chart(fig_dd, use_container_width=True)
 
     # ── Monthly OHLC candlestick ───────────────────────────────────────────────
     st.markdown("---")

@@ -141,6 +141,12 @@ details summary{color:#f5a623!important;font-size:.8rem!important;
   font-weight:700!important;letter-spacing:.1em!important;cursor:pointer;}
 details{background:#040f20!important;border:1px solid #1e3a5f!important;
   border-radius:2px!important;padding:10px 14px!important;margin:6px 0!important;}
+[data-testid="stSidebar"] details{background:transparent!important;border:none!important;
+  border-top:1px solid #1e3a5f!important;padding:8px 0 0!important;
+  margin:4px 0 0!important;border-radius:0!important;}
+[data-testid="stSidebar"] details summary{font-size:.72rem!important;
+  letter-spacing:.07em!important;white-space:nowrap!important;
+  overflow:hidden!important;text-overflow:ellipsis!important;}
 /* Hover/focus tooltips on section headings */
 .qv-tip{position:relative;display:inline-block;cursor:help;}
 .qv-tip:focus{outline:1px dashed rgba(245,166,35,0.5);outline-offset:2px;}
