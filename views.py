@@ -289,9 +289,35 @@ def render_optimizer(
             text=f"<b>{center}</b>", x=0.5, y=0.5, showarrow=False,
             font=dict(family="'JetBrains Mono','Courier New',monospace", size=12, color=ACCENT),
         )
-        fig.update_layout(**_pl(height=370, margin=dict(t=20, b=20, l=10, r=10)),
+        fig.update_layout(**_pl(height=320, margin=dict(t=20, b=20, l=10, r=10)),
                           showlegend=True)
         st.plotly_chart(fig, use_container_width=True)
+
+        # Horizontal bar chart — weight breakdown
+        sorted_w = sorted(weights.items(), key=lambda x: x[1])
+        fig_bar = go.Figure(go.Bar(
+            x=[v for _, v in sorted_w],
+            y=[t for t, _ in sorted_w],
+            orientation="h",
+            marker=dict(
+                color=[PALETTE[i % len(PALETTE)] for i in range(len(sorted_w))],
+                line=dict(color=BG, width=1),
+            ),
+            text=[f"{v:.1%}" for _, v in sorted_w],
+            textposition="outside",
+            textfont=dict(size=11, color=TEXT),
+            hovertemplate="<b>%{y}</b><br>Weight: %{x:.1%}<extra></extra>",
+        ))
+        fig_bar.update_layout(
+            **_pl(
+                height=max(160, 28 + len(sorted_w) * 32),
+                margin=dict(t=8, b=8, l=10, r=60),
+                xaxis=dict(**_PL_BASE["xaxis"], tickformat=".0%", showgrid=True),
+                yaxis=dict(tickfont=dict(size=11), showgrid=False),
+            ),
+            showlegend=False,
+        )
+        st.plotly_chart(fig_bar, use_container_width=True)
 
     with col_t:
         _titled(
@@ -632,6 +658,47 @@ def render_backtest(r: dict, bt_fn) -> None:
                    font=dict(size=11, color=ACCENT), x=0.0),
     )
     st.plotly_chart(fig, use_container_width=True)
+
+    # ── Monthly OHLC candlestick ───────────────────────────────────────────────
+    st.markdown("---")
+    _titled(
+        "MONTHLY OHLC — PORTFOLIO VALUE",
+        "Candlestick chart of the portfolio's indexed value resampled to monthly bars. "
+        "Each candle shows the month's open, high, low, and close (amber = up month, red = down month). "
+        "This view highlights seasonal patterns, volatility regimes, and the magnitude of drawdown candles "
+        "that are smoothed away in the daily line chart above.",
+    )
+    port_series = bt["Portfolio"].copy()
+    port_series.index = pd.to_datetime(port_series.index)
+    monthly_ohlc = port_series.resample("ME").ohlc()
+
+    fig_c = go.Figure(go.Candlestick(
+        x=monthly_ohlc.index,
+        open=monthly_ohlc["open"],
+        high=monthly_ohlc["high"],
+        low=monthly_ohlc["low"],
+        close=monthly_ohlc["close"],
+        increasing=dict(line=dict(color=GREEN, width=1.5), fillcolor="rgba(57,211,83,0.35)"),
+        decreasing=dict(line=dict(color=RED,   width=1.5), fillcolor="rgba(255,68,68,0.35)"),
+        hovertext=[
+            f"<b>{d.strftime('%b %Y')}</b><br>"
+            f"Open: {o:.1f}<br>High: {h:.1f}<br>Low: {l:.1f}<br>Close: {c:.1f}<br>"
+            f"Change: {(c/o - 1):+.1%}"
+            for d, o, h, l, c in zip(
+                monthly_ohlc.index,
+                monthly_ohlc["open"], monthly_ohlc["high"],
+                monthly_ohlc["low"],  monthly_ohlc["close"],
+            )
+        ],
+        hoverinfo="text",
+    ))
+    fig_c.update_layout(
+        **_pl(height=340, xaxis_title="Month", yaxis_title="Indexed to 100"),
+        xaxis_rangeslider_visible=False,
+        title=dict(text="MONTHLY OHLC — PORTFOLIO INDEXED TO 100",
+                   font=dict(size=11, color=ACCENT), x=0.0),
+    )
+    st.plotly_chart(fig_c, use_container_width=True)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

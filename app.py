@@ -360,45 +360,47 @@ with st.sidebar:
 
     # ── Saved Portfolios ───────────────────────────────────────────────────────
     st.markdown("---")
-    st.markdown("<div class='qv-label'>Saved Portfolios</div>", unsafe_allow_html=True)
-    sv1, sv2 = st.columns([3, 1])
-    with sv1:
-        save_name = st.text_input(
-            "save_name", placeholder="Portfolio name…",
-            label_visibility="collapsed", key="save_name_input",
-        )
-    with sv2:
-        if st.button("SAVE", key="btn_save", use_container_width=True):
-            name = save_name.strip()
-            if name:
-                st.session_state.saved_portfolios[name] = ticker_input
-                st.success(f"Saved '{name}'")
+    n_saved = len(st.session_state.saved_portfolios)
+    saved_label = f"SAVED PORTFOLIOS ({n_saved})" if n_saved else "SAVED PORTFOLIOS"
+    with st.expander(saved_label, expanded=n_saved > 0):
+        sv1, sv2 = st.columns([3, 1])
+        with sv1:
+            save_name = st.text_input(
+                "save_name", placeholder="Portfolio name…",
+                label_visibility="collapsed", key="save_name_input",
+            )
+        with sv2:
+            if st.button("SAVE", key="btn_save", use_container_width=True):
+                name = save_name.strip()
+                if name:
+                    st.session_state.saved_portfolios[name] = ticker_input
+                    st.success(f"Saved '{name}'")
 
-    if st.session_state.saved_portfolios:
-        for pname in list(st.session_state.saved_portfolios):
-            lc1, lc2, lc3 = st.columns([4, 2, 1])
-            with lc1:
-                st.markdown(
-                    f"<div style='color:{TEXT};font-size:.62rem;padding-top:6px;'>{pname}</div>",
-                    unsafe_allow_html=True,
-                )
-            with lc2:
-                if st.button("LOAD", key=f"load_{pname}"):
-                    st.session_state["ticker_input"] = st.session_state.saved_portfolios[pname]
-                    st.rerun()
-            with lc3:
-                if st.button("DEL", key=f"del_{pname}"):
-                    del st.session_state.saved_portfolios[pname]
-                    st.rerun()
-        json_export = json.dumps(st.session_state.saved_portfolios, indent=2)
-        st.markdown('<div class="qv-dl">', unsafe_allow_html=True)
-        st.download_button(
-            "↓ EXPORT SAVED",
-            data=json_export,
-            file_name="quant_view_portfolios.json",
-            mime="application/json",
-        )
-        st.markdown("</div>", unsafe_allow_html=True)
+        if st.session_state.saved_portfolios:
+            for pname in list(st.session_state.saved_portfolios):
+                lc1, lc2, lc3 = st.columns([4, 2, 1])
+                with lc1:
+                    st.markdown(
+                        f"<div style='color:{TEXT};font-size:.62rem;padding-top:6px;'>{pname}</div>",
+                        unsafe_allow_html=True,
+                    )
+                with lc2:
+                    if st.button("LOAD", key=f"load_{pname}"):
+                        st.session_state["ticker_input"] = st.session_state.saved_portfolios[pname]
+                        st.rerun()
+                with lc3:
+                    if st.button("DEL", key=f"del_{pname}"):
+                        del st.session_state.saved_portfolios[pname]
+                        st.rerun()
+            json_export = json.dumps(st.session_state.saved_portfolios, indent=2)
+            st.markdown('<div class="qv-dl">', unsafe_allow_html=True)
+            st.download_button(
+                "↓ EXPORT SAVED",
+                data=json_export,
+                file_name="quant_view_portfolios.json",
+                mime="application/json",
+            )
+            st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("---")
     st.markdown(
@@ -484,11 +486,11 @@ if st.session_state.result is not None and st.session_state.get("result_params")
 
 # ── Tabs ──────────────────────────────────────────────────────────────────────
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "F1  OPTIMIZER",
-    "F2  ANALYTICS",
-    "F3  BACKTEST",
-    "F4  HOLDINGS",
-    "F5  GUIDE",
+    "OPTIMIZER",
+    "ANALYTICS",
+    "BACKTEST",
+    "HOLDINGS",
+    "GUIDE",
 ])
 
 with tab1:
