@@ -1,18 +1,19 @@
-"""Quant-View Optimizer — F5 Guide Tab
+"""StocksBro — Guide Tab
 Plain-language explanations of every concept and formula in the tool.
 """
 import streamlit as st
 
-ACCENT = "#f5a623"
-TEXT   = "#c8cdd4"
-GREEN  = "#39d353"
-RED    = "#ff4444"
+ACCENT = "#f59e0b"
+TEXT   = "#dde3ec"
+GREEN  = "#10b981"
+RED    = "#f87171"
 
 
 def _header(text: str) -> None:
     st.markdown(
-        f"<div style='color:{ACCENT};font-size:.75rem;font-weight:700;"
-        f"letter-spacing:.12em;text-transform:uppercase;margin:18px 0 6px;'>"
+        f"<div style='color:{ACCENT};font-size:.72rem;font-weight:600;"
+        f"letter-spacing:.08em;text-transform:uppercase;margin:18px 0 6px;"
+        f"font-family:Inter,sans-serif;'>"
         f"{text}</div>",
         unsafe_allow_html=True,
     )
@@ -20,22 +21,24 @@ def _header(text: str) -> None:
 
 def _note(text: str) -> None:
     st.markdown(
-        f"<div style='background:#040f20;border-left:3px solid {ACCENT};"
-        f"padding:10px 14px;border-radius:2px;color:{TEXT};font-size:.72rem;"
-        f"line-height:1.8;margin:8px 0;'>{text}</div>",
+        f"<div style='background:#0c1526;border-left:3px solid {ACCENT};"
+        f"padding:10px 14px;border-radius:6px;color:{TEXT};font-size:.72rem;"
+        f"line-height:1.8;margin:8px 0;font-family:Inter,sans-serif;'>{text}</div>",
         unsafe_allow_html=True,
     )
 
 
 def _formula(label: str, formula: str, plain: str) -> None:
     st.markdown(
-        f"<div style='background:#040f20;border:1px solid #1e3a5f;border-radius:2px;"
-        f"padding:12px 16px;margin:8px 0;'>"
-        f"<div style='color:{ACCENT};font-size:.65rem;font-weight:700;"
-        f"letter-spacing:.1em;margin-bottom:6px;'>{label}</div>"
-        f"<div style='color:#4ea8de;font-family:\"Courier New\",monospace;"
-        f"font-size:.8rem;margin-bottom:8px;'>{formula}</div>"
-        f"<div style='color:{TEXT};font-size:.7rem;line-height:1.7;'>{plain}</div>"
+        f"<div style='background:#0c1526;border:1px solid #1e2d44;border-radius:8px;"
+        f"padding:14px 16px;margin:8px 0;'>"
+        f"<div style='color:{ACCENT};font-size:.62rem;font-weight:600;"
+        f"letter-spacing:.08em;margin-bottom:8px;font-family:Inter,sans-serif;"
+        f"text-transform:uppercase;'>{label}</div>"
+        f"<div style='color:#60a5fa;font-family:IBM Plex Mono,\"Courier New\",monospace;"
+        f"font-size:.8rem;margin-bottom:10px;'>{formula}</div>"
+        f"<div style='color:{TEXT};font-size:.7rem;line-height:1.7;"
+        f"font-family:Inter,sans-serif;'>{plain}</div>"
         f"</div>",
         unsafe_allow_html=True,
     )
@@ -43,10 +46,12 @@ def _formula(label: str, formula: str, plain: str) -> None:
 
 def render_guide() -> None:
     st.markdown(
-        f"<div style='color:{ACCENT};font-size:1rem;font-weight:700;"
-        f"letter-spacing:.1em;margin-bottom:4px;'>◈ STOCKSBRO — COMPLETE GUIDE</div>"
-        f"<div style='color:#6b7a8d;font-size:.65rem;letter-spacing:.08em;"
-        f"margin-bottom:18px;'>Everything explained from first principles — no finance background required</div>",
+        f"<div style='color:{ACCENT};font-size:.95rem;font-weight:700;"
+        f"letter-spacing:.06em;margin-bottom:4px;font-family:IBM Plex Mono,monospace;"
+        f"'>◈ STOCKSBRO — COMPLETE GUIDE</div>"
+        f"<div style='color:#4b5a6b;font-size:.65rem;letter-spacing:.04em;"
+        f"margin-bottom:18px;font-family:Inter,sans-serif;'>"
+        f"Everything explained from first principles — no finance background required</div>",
         unsafe_allow_html=True,
     )
 
@@ -248,7 +253,7 @@ Every point on the curve is a different allocation that you can't improve withou
 - **Upper right** = higher return, but also higher risk
 
 Any portfolio *below* the curve is inefficient — you're accepting the same risk for less return.
-You can see this chart in the **F2 ANALYTICS** tab.
+You can see this chart in the **ANALYTICS** tab.
             """
         )
         _header("Capital Market Line (CML)")
@@ -266,7 +271,7 @@ is the **maximum Sharpe portfolio** — the single best risk-adjusted return ava
             "ρ = +1 means the two assets move perfectly together (no diversification benefit). "
             "ρ = −1 means they move perfectly opposite (maximum hedging). "
             "ρ = 0 means they move independently. "
-            "The correlation heatmap in F2 shows all pair-wise correlations. "
+            "The correlation heatmap in the ANALYTICS tab shows all pair-wise correlations. "
             "You want low correlations — that's what makes diversification work."
         )
 
@@ -408,9 +413,9 @@ possible scenarios. Here's how it works for a portfolio:
 3. Each simulation traces a different path your portfolio *could* take over the horizon.
 4. We summarize the range of outcomes using **percentiles**.
 
-The **fan chart** in F2 ANALYTICS shows:
+The **fan chart** in the ANALYTICS tab shows:
 - **P90 line (green):** 90% of simulations ended below this — an optimistic outcome
-- **P50 line (orange):** the median — half of all runs were better, half were worse
+- **P50 line (amber):** the median — half of all runs were better, half were worse
 - **P10 line (red):** 10% of simulations ended below this — a pessimistic outcome
 - **Shaded bands:** the cone of uncertainty widens as you look further into the future
 
@@ -433,7 +438,7 @@ and the others stay flat, Apple now represents ~57% of your portfolio, not 40%.
 - You may have unintentionally become overexposed to your best performer
 - Rebalancing (selling what grew, buying what lagged) restores the original risk profile
 
-The **Rebalancing Drift** section in F4 HOLDINGS shows:
+The **Rebalancing Drift** section in the HOLDINGS tab shows:
 - **Target %:** the weight from the optimization
 - **Current %:** what the weight would be today (based on 1 year of price drift)
 - **Drift:** how far it has moved (+ve = overweight, −ve = underweight)
@@ -484,53 +489,57 @@ Use this to:
 
     # ── SECTION 13: How to use each tab ──────────────────────────────────────
     with st.expander("HOW TO USE EACH TAB"):
-        _header("F1 · OPTIMIZER")
+        _header("OPTIMIZER")
         st.markdown(
             """
 The main results tab. After pressing RUN OPTIMIZATION, you'll see:
-- **4 KPI cards:** Return, Volatility, Sharpe, Max Drawdown at a glance
+- **4 KPI cards:** Return, Volatility, Sharpe, and Max Drawdown — color-coded green/amber/red by quality
 - **Donut chart:** visual split of your allocation across assets
+- **Weight bar chart:** horizontal bars showing each position's weight for easy comparison
 - **Position table:** exact weights, company names, and contribution to expected return
 - **Export CSV:** download the weights for use in a spreadsheet or brokerage
             """
         )
-        _header("F2 · ANALYTICS")
+        _header("ANALYTICS")
         st.markdown(
             """
 Deep-dive on risk and the mathematical foundation:
 - **Efficient Frontier:** see where your portfolio sits on the risk/return spectrum
-- **Correlation Matrix:** spot which assets move together (warmer colors = more correlated)
+- **Correlation Matrix:** spot which assets move together (red = positive, blue = negative)
 - **Risk Attribution:** which assets contribute most to total portfolio volatility
-- **Monte Carlo:** visualize the range of possible future outcomes
+- **Monte Carlo:** visualize the range of possible future outcomes across 1–10 year horizons
             """
         )
-        _header("F3 · BACKTEST")
+        _header("BACKTEST")
         st.markdown(
             """
 See how your optimized portfolio *would have performed* if you'd held it over the
-historical lookback period, compared to a benchmark (SPY, QQQ, IWM, or BND).
-The **Alpha** metric shows how much you outperformed (or underperformed) the benchmark.
-Note: this is in-sample — the portfolio was optimized on the same data, so it looks
-better than it would in true out-of-sample testing.
+historical lookback period, compared to a benchmark (SPY, QQQ, IWM, or BND):
+- **Equity curve:** portfolio vs benchmark indexed to 100 at the start of the period
+- **Drawdown chart:** rolling peak-to-trough decline with max drawdown annotated
+- **Monthly OHLC:** candlestick view of monthly open/high/low/close performance
+
+Note: this is in-sample — the portfolio was optimized on the same data, so it will
+typically look better than a true out-of-sample test would show.
             """
         )
-        _header("F4 · HOLDINGS")
+        _header("HOLDINGS")
         st.markdown(
             """
 Individual asset analysis:
-- **Stats table:** per-ticker return, volatility, Sharpe, Sortino, max drawdown
-- **Sharpe chart:** quickly see which assets are pulling their weight
-- **Rebalancing drift:** how much each position has drifted from target over the past year
+- **Stats table:** per-ticker return, volatility, Sharpe, Sortino, max drawdown — exportable to CSV
+- **Sharpe chart:** quickly see which assets are pulling their weight vs dragging the portfolio
+- **Rebalancing drift:** how much each position has drifted from target over the past year, with BUY/SELL/HOLD actions
             """
         )
-        _header("F5 · GUIDE")
+        _header("GUIDE")
         st.markdown("You're reading it.")
 
     # ── Footer ─────────────────────────────────────────────────────────────────
     st.markdown(
-        "<div style='color:#2a4060;font-size:.6rem;text-align:center;"
-        "margin-top:32px;letter-spacing:.1em;'>"
-        "STOCKSBRO · BUILT WITH PYPFOPT · DATA FROM YAHOO FINANCE · "
-        "FOR EDUCATIONAL AND INFORMATIONAL USE ONLY · NOT FINANCIAL ADVICE</div>",
+        "<div style='color:#2a3a50;font-size:.58rem;text-align:center;"
+        "margin-top:32px;letter-spacing:.08em;font-family:Inter,sans-serif;'>"
+        "StocksBro · Built with PyPortfolioOpt · Data from Yahoo Finance · "
+        "For educational and informational use only · Not financial advice</div>",
         unsafe_allow_html=True,
     )

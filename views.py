@@ -40,6 +40,20 @@ def _pl(**kw) -> dict:
     return d
 
 
+def _kpi(col, label: str, value: str, color: str, tooltip: str = "") -> None:
+    """Color-coded KPI card rendered inside a Streamlit column."""
+    col.markdown(
+        f"<div style='background:#071628;border:1px solid #1e3a5f;"
+        f"border-left:3px solid {color};border-radius:2px;padding:10px 14px;'"
+        f" title='{tooltip}'>"
+        f"<div style='color:#9aabb8;font-size:.75rem;text-transform:uppercase;"
+        f"letter-spacing:.1em;margin-bottom:6px;'>{label}</div>"
+        f"<div style='color:{color};font-size:1.4rem;font-weight:700;line-height:1.2;'>{value}</div>"
+        f"</div>",
+        unsafe_allow_html=True,
+    )
+
+
 def _titled(title: str, tooltip: str) -> None:
     """Render a section heading that reveals a tooltip on hover or focus."""
     st.markdown(
@@ -247,22 +261,24 @@ def render_optimizer(
     )
 
     k1, k2, k3, k4 = st.columns(4)
-    k1.metric(
-        "Expected Annual Return", f"{r['expected_return']:.2%}",
-        help="The annualised return predicted by the selected returns model, based on historical price data over the lookback period.",
-    )
-    k2.metric(
-        "Annual Volatility", f"{r['annual_volatility']:.2%}",
-        help="The expected year-to-year fluctuation in portfolio value. Lower volatility means a smoother ride, but typically lower returns.",
-    )
-    k3.metric(
-        "Sharpe Ratio", f"{r['sharpe_ratio']:.4f}",
-        help="Return earned per unit of risk: (Expected Return − Risk-Free Rate) ÷ Volatility. Above 1.0 is generally considered strong.",
-    )
-    k4.metric(
-        "Max Drawdown", f"{r['max_drawdown']:.2%}",
-        help="The largest peak-to-trough decline recorded in the portfolio over the lookback period — a measure of worst-case historical loss.",
-    )
+    ret  = r["expected_return"]
+    vol  = r["annual_volatility"]
+    sr   = r["sharpe_ratio"]
+    mdd  = r["max_drawdown"]
+
+    ret_color = GREEN  if ret > 0.08  else (ACCENT if ret > 0    else RED)
+    vol_color = GREEN  if vol < 0.12  else (ACCENT if vol < 0.20 else RED)
+    sr_color  = GREEN  if sr  > 1.5   else (ACCENT if sr  > 0.5  else RED)
+    mdd_color = GREEN  if mdd > -0.10 else (ACCENT if mdd > -0.20 else RED)
+
+    _kpi(k1, "Expected Annual Return", f"{ret:.2%}", ret_color,
+         "The annualised return predicted by the selected returns model, based on historical price data over the lookback period.")
+    _kpi(k2, "Annual Volatility", f"{vol:.2%}", vol_color,
+         "The expected year-to-year fluctuation in portfolio value. Lower volatility means a smoother ride, but typically lower returns.")
+    _kpi(k3, "Sharpe Ratio", f"{sr:.2f}", sr_color,
+         "Return earned per unit of risk: (Expected Return − Risk-Free Rate) ÷ Volatility. Above 1.0 is generally considered strong.")
+    _kpi(k4, "Max Drawdown", f"{mdd:.2%}", mdd_color,
+         "The largest peak-to-trough decline recorded in the portfolio over the lookback period — a measure of worst-case historical loss.")
 
     st.markdown("<div style='margin-top:12px;'></div>", unsafe_allow_html=True)
     col_c, col_t = st.columns([1.1, 0.9])
@@ -516,7 +532,8 @@ def render_analytics(r: dict, ef_fn, stats_fn, mc_fn=None) -> None:
                 format_func=lambda x: f"{x}Y", key="mc_horizon",
             )
         with mc_c2:
-            n_sims = st.selectbox("Simulations", [500, 1000, 5000], index=1, key="mc_n")
+            n_sims = st.selectbox("Simulations", [500, 1000, 5000], index=1, key="mc_n",
+                                  format_func=lambda x: f"{x:,}")
 
         with st.spinner("Running Monte Carlo simulation..."):
             mc = mc_fn(prices, tuple(sorted(weights.items())), horizon, n_sims)
