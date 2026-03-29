@@ -141,12 +141,6 @@ details summary{color:#f5a623!important;font-size:.8rem!important;
   font-weight:700!important;letter-spacing:.1em!important;cursor:pointer;}
 details{background:#040f20!important;border:1px solid #1e3a5f!important;
   border-radius:2px!important;padding:10px 14px!important;margin:6px 0!important;}
-[data-testid="stSidebar"] details{background:transparent!important;border:none!important;
-  border-top:1px solid #1e3a5f!important;padding:8px 0 0!important;
-  margin:4px 0 0!important;border-radius:0!important;}
-[data-testid="stSidebar"] details summary{font-size:.72rem!important;
-  letter-spacing:.07em!important;white-space:nowrap!important;
-  overflow:hidden!important;text-overflow:ellipsis!important;}
 /* Hover/focus tooltips on section headings */
 .qv-tip{position:relative;display:inline-block;cursor:help;}
 .qv-tip:focus{outline:1px dashed rgba(245,166,35,0.5);outline-offset:2px;}
@@ -366,9 +360,22 @@ with st.sidebar:
 
     # ── Saved Portfolios ───────────────────────────────────────────────────────
     st.markdown("---")
-    n_saved = len(st.session_state.saved_portfolios)
-    saved_label = f"SAVED PORTFOLIOS ({n_saved})" if n_saved else "SAVED PORTFOLIOS"
-    with st.expander(saved_label, expanded=n_saved > 0):
+    n_saved  = len(st.session_state.saved_portfolios)
+    sv_exp   = st.session_state.get("saved_exp", True)
+    badge    = f" ({n_saved})" if n_saved else ""
+    arrow    = "▾" if sv_exp else "▸"
+
+    lbl_col, tog_col = st.columns([5, 1])
+    with lbl_col:
+        st.markdown(
+            f"<div class='qv-label' style='margin-top:6px;'>SAVED PORTFOLIOS{badge}</div>",
+            unsafe_allow_html=True,
+        )
+    with tog_col:
+        if st.button(arrow, key="btn_svd_toggle", use_container_width=True):
+            st.session_state["saved_exp"] = not sv_exp
+
+    if sv_exp:
         sv1, sv2 = st.columns([3, 1])
         with sv1:
             save_name = st.text_input(
