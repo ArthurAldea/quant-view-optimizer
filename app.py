@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 from logic import (
     CURRENCIES,
@@ -44,10 +45,11 @@ st.set_page_config(
 
 # ── Bloomberg Terminal CSS ─────────────────────────────────────────────────────
 st.markdown("""<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
 html,body,[data-testid="stAppViewContainer"],[data-testid="stMain"],.block-container{
-  background:#020c18!important;color:#c8cdd4;font-family:'Courier New',monospace;}
+  background:#020c18!important;color:#c8cdd4;font-family:'JetBrains Mono','Courier New',monospace;}
 [data-testid="stSidebar"]{background:#040f20!important;border-right:1px solid #1e2d45;}
-[data-testid="stSidebar"] *{font-family:'Courier New',monospace!important;}
+[data-testid="stSidebar"] *{font-family:'JetBrains Mono','Courier New',monospace!important;}
 .block-container{padding-top:0.5rem!important;max-width:100%!important;}
 /* Hide Streamlit top toolbar so the header banner is never cut off */
 header[data-testid="stHeader"]{display:none!important;}
@@ -59,37 +61,39 @@ header[data-testid="stHeader"]{display:none!important;}
 button[kind="headerNoPadding"]{display:none!important;}
 h1,h2,h3{color:#f5a623;letter-spacing:.06em;}
 h1{font-size:1.2rem!important;}h2{font-size:.95rem!important;}h3{font-size:.82rem!important;}
-[data-testid="metric-container"]{background:#040f20;border:1px solid #1e3a5f;
+[data-testid="metric-container"]{background:#071628;border:1px solid #1e3a5f;
   border-left:3px solid #f5a623;border-radius:2px;padding:10px 14px;}
 [data-testid="stMetricValue"]{color:#f5a623;font-size:1.4rem!important;font-weight:700;}
-[data-testid="stMetricLabel"]{color:#6b7a8d;font-size:.62rem!important;
+[data-testid="stMetricLabel"]{color:#9aabb8;font-size:.75rem!important;
   text-transform:uppercase;letter-spacing:.1em;}
-[data-testid="stMetricDeltaIcon"],[data-testid="stMetricDelta"]{font-size:.72rem!important;}
+[data-testid="stMetricDeltaIcon"],[data-testid="stMetricDelta"]{font-size:.75rem!important;}
 .stButton>button{background:#f5a623;color:#020c18;font-weight:700;
-  font-family:'Courier New',monospace;border:none;border-radius:2px;
-  letter-spacing:.08em;font-size:.78rem;width:100%;padding:10px;}
+  font-family:'JetBrains Mono','Courier New',monospace;border:none;border-radius:2px;
+  letter-spacing:.08em;font-size:.875rem;width:100%;padding:10px;
+  transition:background .15s ease,color .15s ease;}
 .stButton>button:hover{background:#ffc04d;color:#020c18;}
 .stTextArea textarea{background:#040f20!important;color:#c8cdd4!important;
-  border:1px solid #1e3a5f!important;font-family:'Courier New',monospace!important;
-  font-size:.78rem!important;}
+  border:1px solid #1e3a5f!important;font-family:'JetBrains Mono','Courier New',monospace!important;
+  font-size:.875rem!important;}
 div[data-baseweb="select"]>div{background:#040f20!important;color:#c8cdd4!important;
   border-color:#1e3a5f!important;}
 [data-testid="stSlider"] > div > div > div{background:#1e3a5f;}
 [data-testid="stTabs"]{border-bottom:2px solid #f5a623;margin-bottom:12px;}
-button[data-baseweb="tab"]{background:#040f20!important;color:#6b7a8d!important;
-  font-family:'Courier New',monospace!important;font-size:.68rem!important;
+button[data-baseweb="tab"]{background:#040f20!important;color:#9aabb8!important;
+  font-family:'JetBrains Mono','Courier New',monospace!important;font-size:.8rem!important;
   font-weight:700!important;letter-spacing:.12em!important;text-transform:uppercase!important;
   border:1px solid #1e2d45!important;border-bottom:none!important;
-  border-radius:2px 2px 0 0!important;padding:6px 20px!important;margin-right:3px!important;}
+  border-radius:2px 2px 0 0!important;padding:6px 20px!important;margin-right:3px!important;
+  transition:background .15s ease,color .15s ease,border-color .15s ease!important;}
 button[data-baseweb="tab"]:hover{color:#c8cdd4!important;background:#0d1f35!important;}
 button[data-baseweb="tab"][aria-selected="true"]{background:#f5a623!important;
   color:#020c18!important;border-color:#f5a623!important;}
 [data-testid="stDataFrame"]{border:1px solid #1e3a5f!important;border-radius:2px;}
 hr{border-color:#1e2d45;margin:5px 0;}
-.qv-label{color:#8a97a8;font-size:.68rem;text-transform:uppercase;
+.qv-label{color:#9aabb8;font-size:.75rem;text-transform:uppercase;
   letter-spacing:.12em;margin-bottom:3px;margin-top:10px;}
 .qv-status{background:#040f20;border:1px solid #1e3a5f;border-radius:2px;
-  padding:6px 14px;font-size:.75rem;color:#8a97a8;display:flex;
+  padding:6px 14px;font-size:.8rem;color:#9aabb8;display:flex;
   flex-wrap:wrap;gap:20px;margin-bottom:12px;}
 .ok{color:#39d353;font-weight:700;}.warn{color:#f5a623;font-weight:700;}
 .neg{color:#ff4444;font-weight:700;}
@@ -97,39 +101,43 @@ hr{border-color:#1e2d45;margin:5px 0;}
 .qv-feat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;
   max-width:960px;margin:0 auto;}
 @media(max-width:720px){.qv-feat-grid{grid-template-columns:repeat(2,1fr);}}
-.qv-feat{background:#040f20;border:1px solid #1e3a5f;border-radius:2px;
-  padding:16px 14px;text-align:center;}
+.qv-feat{background:#040f20;border:1px solid #1e3a5f;border-left:3px solid rgba(245,166,35,0.3);
+  border-radius:2px;padding:16px 14px;text-align:center;
+  transition:background .15s ease,border-color .15s ease;}
+.qv-feat:hover{background:#071628;border-left-color:#f5a623;}
 .qv-feat-icon{font-size:1.1rem;font-weight:700;color:#f5a623;
   letter-spacing:.06em;margin-bottom:8px;}
-.qv-feat-title{color:#f5a623;font-size:.72rem;font-weight:700;
+.qv-feat-title{color:#f5a623;font-size:.8rem;font-weight:700;
   letter-spacing:.1em;margin-bottom:5px;}
-.qv-feat-desc{color:#8a97a8;font-size:.7rem;line-height:1.7;}
-.qv-landing-cta{text-align:center;margin-top:24px;color:#8a97a8;
-  font-size:.78rem;letter-spacing:.12em;}
+.qv-feat-desc{color:#9aabb8;font-size:.8rem;line-height:1.7;}
+.qv-landing-cta{text-align:center;margin-top:24px;color:#f5a623;
+  font-size:.875rem;letter-spacing:.12em;}
 [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"]{
   flex:1 1 0%!important;min-width:0!important;}
 [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton{
   width:100%!important;}
 [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] button{
   background:#040f20!important;color:#c8cdd4!important;
-  border:1px solid #1e3a5f!important;font-size:.65rem!important;
+  border:1px solid #1e3a5f!important;font-size:.75rem!important;
   padding:0!important;letter-spacing:.02em!important;
   height:32px!important;min-height:32px!important;max-height:32px!important;
   width:100%!important;white-space:nowrap!important;overflow:hidden!important;
   display:flex!important;align-items:center!important;justify-content:center!important;
-  text-align:center!important;box-sizing:border-box!important;}
+  text-align:center!important;box-sizing:border-box!important;
+  transition:background .15s ease,border-color .15s ease,color .15s ease!important;}
 [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] button:hover{
   background:#0d1f35!important;border-color:#f5a623!important;color:#f5a623!important;}
 .qv-dl>div>button,.qv-dl>div>a{background:transparent!important;
   color:#f5a623!important;border:1px solid #1e3a5f!important;
-  font-size:.68rem!important;padding:6px 14px!important;width:auto!important;}
+  font-size:.75rem!important;padding:6px 14px!important;width:auto!important;
+  transition:border-color .15s ease!important;}
 .qv-dl>div>button:hover{border-color:#f5a623!important;}
 [data-testid="stStatusWidget"]{background:#040f20;border:1px solid #1e3a5f;
-  border-radius:2px;font-size:.72rem;}
+  border-radius:2px;font-size:.8rem;}
 ::-webkit-scrollbar{width:5px;height:5px;}
 ::-webkit-scrollbar-track{background:#020c18;}
 ::-webkit-scrollbar-thumb{background:#1e3a5f;border-radius:3px;}
-details summary{color:#f5a623!important;font-size:.72rem!important;
+details summary{color:#f5a623!important;font-size:.8rem!important;
   font-weight:700!important;letter-spacing:.1em!important;cursor:pointer;}
 details{background:#040f20!important;border:1px solid #1e3a5f!important;
   border-radius:2px!important;padding:10px 14px!important;margin:6px 0!important;}
@@ -138,13 +146,15 @@ details{background:#040f20!important;border:1px solid #1e3a5f!important;
 .qv-tip:focus{outline:1px dashed rgba(245,166,35,0.5);outline-offset:2px;}
 .qv-tip-box{visibility:hidden;opacity:0;pointer-events:none;
   background:#040f20;border:1px solid #f5a623;color:#c8cdd4;
-  font-family:'Courier New',monospace;font-size:.7rem;line-height:1.7;
+  font-family:'JetBrains Mono','Courier New',monospace;font-size:.8rem;line-height:1.7;
   font-weight:400;letter-spacing:0;text-transform:none;
   padding:8px 12px;border-radius:2px;
   position:absolute;z-index:9999;width:340px;
   bottom:130%;left:0;
   transition:opacity .15s ease;}
 .qv-tip:hover .qv-tip-box,.qv-tip:focus .qv-tip-box{visibility:visible;opacity:1;}
+/* cursor affordance on all clickable custom elements */
+.qv-tip,.qv-feat{cursor:pointer;}
 </style>""", unsafe_allow_html=True)
 
 ACCENT = "#f5a623"
@@ -227,7 +237,7 @@ with st.sidebar:
     st.markdown(
         "<div style='color:#f5a623;font-size:1.15rem;font-weight:700;"
         "letter-spacing:.12em;padding:4px 0 2px;'>◈ STOCKSBRO</div>"
-        "<div style='color:#6b7a8d;font-size:.6rem;letter-spacing:.1em;"
+        "<div style='color:#9aabb8;font-size:.75rem;letter-spacing:.1em;"
         "text-transform:uppercase;margin-bottom:10px;'>Professional Portfolio Analytics</div>",
         unsafe_allow_html=True,
     )
@@ -252,7 +262,7 @@ with st.sidebar:
 
     st.markdown(
         "<div class='qv-label' style='margin-top:8px;'>Tickers — one per line</div>"
-        "<div style='color:#6b7a8d;font-size:.58rem;line-height:1.7;margin-bottom:4px;'>"
+        "<div style='color:#9aabb8;font-size:.75rem;line-height:1.7;margin-bottom:4px;'>"
         "US: AAPL &nbsp;·&nbsp; ASX: CBA.AX &nbsp;·&nbsp; Crypto: BTC-USD</div>",
         unsafe_allow_html=True,
     )
@@ -282,10 +292,10 @@ with st.sidebar:
             rc1, rc2 = st.columns([5, 1])
             with rc1:
                 st.markdown(
-                    f"<div style='font-size:.6rem;color:{TEXT};padding-top:6px;line-height:1.5;'>"
+                    f"<div style='font-size:.75rem;color:{TEXT};padding-top:6px;line-height:1.5;'>"
                     f"<b style='color:{ACCENT};'>{res['symbol']}</b>"
                     f"&nbsp;·&nbsp;{res['name']}"
-                    f"<span style='color:#6b7a8d;'>&nbsp;({res['exchange']})</span></div>",
+                    f"<span style='color:#9aabb8;'>&nbsp;({res['exchange']})</span></div>",
                     unsafe_allow_html=True,
                 )
             with rc2:
@@ -308,7 +318,7 @@ with st.sidebar:
     )
     returns_model = RETURN_MODELS[returns_model_label]
 
-    rc1, rc2 = st.columns(2)
+    rc1, rc2 = st.columns(2, vertical_alignment="bottom")
     with rc1:
         st.markdown("<div class='qv-label'>Lookback</div>", unsafe_allow_html=True)
         lookback = st.selectbox(
@@ -341,8 +351,12 @@ with st.sidebar:
                               format="%d%%", label_visibility="collapsed")
         w_max = w_max_pct / 100
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    run = st.button("▶  RUN OPTIMIZATION")
+    st.markdown("<div style='margin-top:12px;'></div>", unsafe_allow_html=True)
+    _computing = st.session_state.get("_computing", False)
+    run = st.button(
+        "⏳  COMPUTING..." if _computing else "▶  RUN OPTIMIZATION",
+        disabled=_computing,
+    )
 
     # ── Saved Portfolios ───────────────────────────────────────────────────────
     st.markdown("---")
@@ -388,11 +402,8 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown(
-        "<div style='color:#6b7a8d;font-size:.58rem;line-height:2;'>"
-        "ENGINE &nbsp;&nbsp;&nbsp;&nbsp; CVXPY · CLARABEL<br>"
-        "COV MODEL &nbsp; LEDOIT-WOLF SHRINKAGE<br>"
-        "DATA &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ADJ. CLOSE · YAHOO<br>"
-        "VERSION &nbsp;&nbsp;&nbsp; 2.2.0</div>",
+        "<div style='color:#f5a623;font-size:.75rem;letter-spacing:.06em;'>"
+        "◈ v2.2 · CVXPY · CLARABEL · LEDOIT-WOLF</div>",
         unsafe_allow_html=True,
     )
 
@@ -404,12 +415,12 @@ st.markdown(
     f"<div>"
     f"<span style='color:{ACCENT};font-size:1.25rem;font-weight:700;"
     f"letter-spacing:.1em;'>◈ STOCKSBRO</span>"
-    f"<span style='color:#6b7a8d;font-size:.6rem;letter-spacing:.08em;"
+    f"<span style='color:#9aabb8;font-size:.75rem;letter-spacing:.08em;"
     f"margin-left:14px;'>PROFESSIONAL PORTFOLIO ANALYTICS · MPT ENGINE v2.2</span>"
     f"</div>"
     f"<div style='text-align:right;'>"
-    f"<span style='color:{ACCENT};font-size:.7rem;'>{now_utc}</span><br>"
-    f"<span style='color:#6b7a8d;font-size:.58rem;'>"
+    f"<span style='color:{ACCENT};font-size:.8rem;font-weight:600;'>{now_utc}</span><br>"
+    f"<span style='color:#9aabb8;font-size:.75rem;'>"
     f"MAX SHARPE · MIN VOL · EFFICIENT FRONTIER · MONTE CARLO · BLACK-LITTERMAN</span>"
     f"</div></div>",
     unsafe_allow_html=True,
@@ -421,19 +432,19 @@ if run:
     if len(tickers) < 2:
         st.error("Enter at least 2 tickers.")
         st.stop()
-    # Clear stale result immediately so tabs show landing while computing
+    st.session_state["_computing"] = True
     st.session_state.result = None
     st.session_state["result_params"] = None
     try:
         with st.status("◈ Computing portfolio...", expanded=True) as _status:
-            _status.write("[DATA] Fetching adjusted close prices from Yahoo Finance...")
+            _status.write(f"[1/4] Fetching {len(tickers)} tickers from Yahoo Finance...")
             result = _run_opt(
                 tuple(tickers), strategy, rfr, lookback, w_min, w_max,
                 returns_model, base_currency,
             )
-            _status.write(f"[COV]  Covariance estimated — Ledoit-Wolf shrinkage ({returns_model_label})")
-            _status.write("[OPT]  Efficient frontier solved — CVXPY · CLARABEL")
-            _status.write("[INFO] Fetching company names...")
+            _status.write(f"[2/4] Covariance estimated — Ledoit-Wolf shrinkage ({returns_model_label})")
+            _status.write("[3/4] Efficient frontier solved — CVXPY · CLARABEL")
+            _status.write("[4/4] Fetching company names...")
             active_tks = tuple(t for t, w in result["weights"].items() if w > 0.0001)
             company_names = _get_names(active_tks)
             _status.update(label="◈ Portfolio optimized  ✓", state="complete", expanded=False)
@@ -451,7 +462,8 @@ if run:
         }
     except Exception as e:
         st.error(f"Optimization failed: {e}")
-        st.stop()
+    finally:
+        st.session_state["_computing"] = False
 
 # ── Stale-result warning ───────────────────────────────────────────────────────
 if st.session_state.result is not None and st.session_state.get("result_params"):
@@ -509,3 +521,26 @@ with tab4:
 
 with tab5:
     render_guide()
+
+# ── Tab state persistence (survives Streamlit reruns) ─────────────────────────
+components.html("""<script>
+(function(){
+  var KEY='sb_tab';
+  function save(i){try{localStorage.setItem(KEY,String(i));}catch(e){}}
+  function bind(){
+    var tabs=window.parent.document.querySelectorAll('[data-baseweb="tab"]');
+    tabs.forEach(function(t,i){
+      if(!t._sbBound){t._sbBound=true;t.addEventListener('click',function(){save(i);});}
+    });
+  }
+  function restore(){
+    var s=localStorage.getItem(KEY);
+    if(!s||s==='0'){bind();return;}
+    var tabs=window.parent.document.querySelectorAll('[data-baseweb="tab"]');
+    var idx=parseInt(s,10);
+    if(tabs.length>idx){tabs[idx].click();}
+    bind();
+  }
+  setTimeout(restore,180);
+})();
+</script>""", height=0)

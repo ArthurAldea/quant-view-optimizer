@@ -26,11 +26,11 @@ PALETTE = [
 
 _PL_BASE = dict(
     paper_bgcolor=BG, plot_bgcolor=PANEL,
-    font=dict(family="Courier New", color=TEXT, size=10),
-    margin=dict(t=32, b=36, l=54, r=20),
-    legend=dict(bgcolor=PANEL, bordercolor=BORDER, borderwidth=1, font=dict(size=10)),
-    xaxis=dict(gridcolor="#0d1f35", zerolinecolor=BORDER, tickfont=dict(size=9)),
-    yaxis=dict(gridcolor="#0d1f35", zerolinecolor=BORDER, tickfont=dict(size=9)),
+    font=dict(family="'JetBrains Mono','Courier New',monospace", color=TEXT, size=12),
+    margin=dict(t=40, b=50, l=60, r=24),
+    legend=dict(bgcolor=PANEL, bordercolor=BORDER, borderwidth=1, font=dict(size=11)),
+    xaxis=dict(gridcolor="#132840", zerolinecolor=BORDER, tickfont=dict(size=11)),
+    yaxis=dict(gridcolor="#132840", zerolinecolor=BORDER, tickfont=dict(size=11)),
 )
 
 
@@ -45,9 +45,9 @@ def _titled(title: str, tooltip: str) -> None:
     st.markdown(
         f"<div class='qv-tip' tabindex='0' role='button' aria-label='{title} — hover or focus for details'"
         f" style='margin:0.8rem 0 0.4rem;'>"
-        f"<span style='color:#f5a623;font-size:.82rem;font-weight:700;"
+        f"<span style='color:#f5a623;font-size:.875rem;font-weight:700;"
         f"letter-spacing:.06em;border-bottom:1px dashed rgba(245,166,35,0.45);'>"
-        f"{title} <span style='font-size:.65rem;opacity:.7;'>ⓘ</span></span>"
+        f"{title} <span style='font-size:.75rem;opacity:.7;'>ⓘ</span></span>"
         f"<div class='qv-tip-box' role='tooltip'>{tooltip}</div>"
         f"</div>",
         unsafe_allow_html=True,
@@ -55,38 +55,154 @@ def _titled(title: str, tooltip: str) -> None:
 
 
 def landing(msg: str) -> None:
-    st.markdown(
-        f"""<div class='qv-landing'>
-        <div class='qv-feat-grid'>
-          <div class='qv-feat'>
-            <div class='qv-feat-icon'>[EF]</div>
-            <div class='qv-feat-title'>EFFICIENT FRONTIER</div>
-            <div class='qv-feat-desc'>Visualize the full opportunity set of optimal portfolios
-              from min-vol to max-return</div>
-          </div>
-          <div class='qv-feat'>
-            <div class='qv-feat-icon'>[OPT]</div>
-            <div class='qv-feat-title'>3 STRATEGIES</div>
-            <div class='qv-feat-desc'>Max Sharpe, Min Volatility, or Max Quadratic Utility
-              with configurable weight constraints</div>
-          </div>
-          <div class='qv-feat'>
-            <div class='qv-feat-icon'>[BT]</div>
-            <div class='qv-feat-title'>BACKTESTING</div>
-            <div class='qv-feat-desc'>Historical equity curve vs SPY, QQQ, IWM
-              with alpha calculation</div>
-          </div>
-          <div class='qv-feat'>
-            <div class='qv-feat-icon'>[RA]</div>
-            <div class='qv-feat-title'>RISK ANALYTICS</div>
-            <div class='qv-feat-desc'>Correlation heatmap, marginal risk attribution,
-              Sharpe, Sortino, max drawdown per asset</div>
-          </div>
-        </div>
-        <div class='qv-landing-cta'>{msg}</div>
-        </div>""",
-        unsafe_allow_html=True,
-    )
+    st.markdown(f"""<style>
+.qv-lp{{max-width:920px;margin:0 auto;padding:20px 8px 40px;}}
+.qv-lp-hero{{text-align:center;padding:24px 0 32px;border-bottom:1px solid #1e3a5f;margin-bottom:30px;}}
+.qv-lp-badge{{display:inline-block;background:rgba(245,166,35,.09);border:1px solid rgba(245,166,35,.3);
+  color:#f5a623;font-size:.68rem;letter-spacing:.18em;padding:4px 14px;border-radius:2px;margin-bottom:14px;}}
+.qv-lp-title{{color:#f5a623;font-size:2rem;font-weight:700;letter-spacing:.1em;margin-bottom:8px;line-height:1.1;}}
+.qv-lp-tagline{{color:#c8cdd4;font-size:.9rem;letter-spacing:.03em;margin-bottom:12px;line-height:1.7;}}
+.qv-lp-desc{{color:#9aabb8;font-size:.82rem;line-height:1.9;max-width:640px;margin:0 auto;}}
+.qv-lp-sh{{color:#f5a623;font-size:.68rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #1e3a5f;}}
+.qv-lp-g3{{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:28px;}}
+@media(max-width:620px){{.qv-lp-g3{{grid-template-columns:repeat(2,1fr);}}}}
+.qv-lp-c{{background:#040f20;border:1px solid #1e3a5f;border-left:3px solid rgba(245,166,35,.22);
+  border-radius:2px;padding:14px;transition:border-left-color .15s,background .15s;}}
+.qv-lp-c:hover{{border-left-color:#f5a623;background:#071628;}}
+.qv-lp-ctag{{color:#f5a623;font-size:.65rem;font-weight:700;letter-spacing:.16em;margin-bottom:5px;opacity:.8;}}
+.qv-lp-ctitle{{color:#c8cdd4;font-size:.78rem;font-weight:700;letter-spacing:.08em;margin-bottom:5px;}}
+.qv-lp-cbody{{color:#9aabb8;font-size:.75rem;line-height:1.8;}}
+.qv-lp-steps{{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:28px;}}
+@media(max-width:620px){{.qv-lp-steps{{grid-template-columns:1fr;}}}}
+.qv-lp-step{{background:#040f20;border:1px solid #1e3a5f;border-radius:2px;padding:16px 14px;}}
+.qv-lp-sn{{color:rgba(245,166,35,.3);font-size:2.2rem;font-weight:700;line-height:1;margin-bottom:7px;}}
+.qv-lp-st{{color:#f5a623;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;}}
+.qv-lp-sb{{color:#9aabb8;font-size:.75rem;line-height:1.8;}}
+.qv-lp-eng{{background:#040f20;border:1px solid #1e3a5f;border-radius:2px;
+  padding:11px 16px;display:flex;flex-wrap:wrap;gap:5px 0;align-items:center;margin-bottom:28px;}}
+.qv-lp-elabel{{color:#9aabb8;font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;
+  margin-right:10px;margin-left:4px;}}
+.qv-lp-elabel:first-child{{margin-left:0;}}
+.qv-lp-ei{{color:#f5a623;font-size:.7rem;font-weight:700;letter-spacing:.06em;
+  padding:2px 9px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.18);
+  border-radius:2px;margin:2px 3px;}}
+.qv-lp-cta{{text-align:center;background:rgba(245,166,35,.06);
+  border:1px solid rgba(245,166,35,.2);border-radius:2px;padding:20px 24px;}}
+.qv-lp-ctam{{color:#f5a623;font-size:.875rem;letter-spacing:.12em;font-weight:700;}}
+.qv-lp-ctas{{color:#9aabb8;font-size:.75rem;margin-top:8px;line-height:1.8;}}
+</style>
+<div class="qv-lp">
+  <div class="qv-lp-hero">
+    <div class="qv-lp-badge">PROFESSIONAL PORTFOLIO ANALYTICS ENGINE</div>
+    <div class="qv-lp-title">◈ STOCKSBRO</div>
+    <div class="qv-lp-tagline">Institutional-grade MPT optimization. Bloomberg Terminal aesthetics. Zero cost.</div>
+    <div class="qv-lp-desc">StocksBro is a professional-grade Modern Portfolio Theory engine that builds and
+      optimizes multi-asset portfolios using convex optimization. Select any combination of equities,
+      ETFs, or crypto — configure your strategy, press Run Optimization, and get a fully analyzed
+      optimal allocation with backtesting, Monte Carlo simulation, and rebalancing guidance in seconds.</div>
+  </div>
+
+  <div class="qv-lp-sh">PLATFORM CAPABILITIES</div>
+  <div class="qv-lp-g3">
+    <div class="qv-lp-c">
+      <div class="qv-lp-ctag">F1 · OPTIMIZER</div>
+      <div class="qv-lp-ctitle">PORTFOLIO OPTIMIZATION</div>
+      <div class="qv-lp-cbody">Three MPT strategies — Max Sharpe Ratio, Min Volatility, and Max
+        Quadratic Utility — solved with CVXPY/CLARABEL. Configurable per-position weight bounds
+        and covariance estimation via Ledoit-Wolf shrinkage.</div>
+    </div>
+    <div class="qv-lp-c">
+      <div class="qv-lp-ctag">F1 · OPTIMIZER</div>
+      <div class="qv-lp-ctitle">EFFICIENT FRONTIER</div>
+      <div class="qv-lp-cbody">Visualize the full risk/return opportunity set — every optimal
+        portfolio from minimum variance to maximum return. Your allocation is plotted on the curve
+        with the Capital Market Line overlay.</div>
+    </div>
+    <div class="qv-lp-c">
+      <div class="qv-lp-ctag">F2 · ANALYTICS</div>
+      <div class="qv-lp-ctitle">RISK ATTRIBUTION</div>
+      <div class="qv-lp-cbody">Correlation heatmap, marginal contribution to portfolio volatility
+        per asset, and individual Sharpe / Sortino / max drawdown metrics. Know exactly where your
+        portfolio risk comes from.</div>
+    </div>
+    <div class="qv-lp-c">
+      <div class="qv-lp-ctag">F2 · ANALYTICS</div>
+      <div class="qv-lp-ctitle">MONTE CARLO SIMULATION</div>
+      <div class="qv-lp-cbody">Bootstrap up to 5,000 simulated return paths from historical daily
+        returns. View P10 / P50 / P90 outcome bands across 1–10 year horizons to stress-test
+        your strategy and size position risk.</div>
+    </div>
+    <div class="qv-lp-c">
+      <div class="qv-lp-ctag">F3 · BACKTEST</div>
+      <div class="qv-lp-ctitle">HISTORICAL BACKTESTING</div>
+      <div class="qv-lp-cbody">Historical equity curve indexed to 100 with benchmark overlays
+        (SPY, QQQ, IWM, BND). Cumulative return, active alpha, and maximum drawdown surfaced as
+        headline KPIs above the chart.</div>
+    </div>
+    <div class="qv-lp-c">
+      <div class="qv-lp-ctag">F4 · HOLDINGS</div>
+      <div class="qv-lp-ctitle">REBALANCING GUIDANCE</div>
+      <div class="qv-lp-cbody">Drift analysis compares current vs target weights. BUY / SELL /
+        HOLD trade recommendations with per-position sizing. Full holdings export to CSV with
+        Sharpe, Sortino, and drawdown per asset.</div>
+    </div>
+  </div>
+
+  <div class="qv-lp-sh">HOW IT WORKS</div>
+  <div class="qv-lp-steps">
+    <div class="qv-lp-step">
+      <div class="qv-lp-sn">01</div>
+      <div class="qv-lp-st">CONFIGURE</div>
+      <div class="qv-lp-sb">Enter tickers in the sidebar — one per line. Use the Quick Load
+        presets (MAG 7, S&amp;P Top 10, FAANG+, Dividend, ETF, Crypto) or search for any
+        US equity, ASX stock (CBA.AX), ETF, or crypto pair (BTC-USD). Set your strategy,
+        lookback period (1–10Y), base currency, risk-free rate, and per-position weight
+        constraints before running.</div>
+    </div>
+    <div class="qv-lp-step">
+      <div class="qv-lp-sn">02</div>
+      <div class="qv-lp-st">OPTIMIZE</div>
+      <div class="qv-lp-sb">Press ▶ RUN OPTIMIZATION. The engine fetches adjusted-close price
+        history from Yahoo Finance, estimates the covariance matrix via Ledoit-Wolf shrinkage
+        (reduces estimation error on small samples), then solves the exact convex optimization
+        problem using CVXPY with the CLARABEL interior-point solver to find the precise
+        optimal weight allocation.</div>
+    </div>
+    <div class="qv-lp-step">
+      <div class="qv-lp-sn">03</div>
+      <div class="qv-lp-st">ANALYZE</div>
+      <div class="qv-lp-sb">Review weight allocation, Sharpe, volatility, and the efficient
+        frontier in F1 OPTIMIZER. Explore risk attribution and Monte Carlo forward simulations
+        in F2 ANALYTICS. Validate the strategy historically in F3 BACKTEST. Check per-asset
+        metrics and rebalancing trades in F4 HOLDINGS. Export any view to CSV.</div>
+    </div>
+  </div>
+
+  <div class="qv-lp-sh">OPTIMIZATION ENGINE</div>
+  <div class="qv-lp-eng">
+    <span class="qv-lp-elabel">SOLVER</span>
+    <span class="qv-lp-ei">CVXPY</span>
+    <span class="qv-lp-ei">CLARABEL</span>
+    <span class="qv-lp-ei">LEDOIT-WOLF</span>
+    <span class="qv-lp-elabel">ANALYTICS</span>
+    <span class="qv-lp-ei">MONTE CARLO</span>
+    <span class="qv-lp-ei">BLACK-LITTERMAN</span>
+    <span class="qv-lp-ei">EFFICIENT FRONTIER</span>
+    <span class="qv-lp-elabel">DATA</span>
+    <span class="qv-lp-ei">YAHOO FINANCE</span>
+    <span class="qv-lp-ei">ADJUSTED CLOSE</span>
+    <span class="qv-lp-ei">1–10Y LOOKBACK</span>
+  </div>
+
+  <div class="qv-lp-cta">
+    <div class="qv-lp-ctam">▶ &nbsp;{msg}</div>
+    <div class="qv-lp-ctas">
+      Supports US equities · ASX stocks (ticker.AX) · Global ETFs · Crypto pairs (BTC-USD)<br>
+      Minimum 2 tickers · Up to 10-year lookback · Configurable weight constraints per position
+    </div>
+  </div>
+</div>""", unsafe_allow_html=True)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -105,17 +221,28 @@ def render_optimizer(
     rm = rm_map.get(r.get("returns_model", "mean_historical"), "MEAN HIST.")
     ccy = r.get("base_currency", "USD")
 
+    zeroed_html = (
+        f"<span style='font-size:.875rem;'>ZEROED OUT: <b class='warn'>{zeroed}</b></span>"
+        if zeroed else ""
+    )
     st.markdown(
-        f"<div class='qv-status'>"
-        f"<span>STRATEGY: <b class='ok'>{strategy_label.upper()}</b></span>"
-        f"<span>RETURNS: <b style='color:{TEXT};'>{rm}</b></span>"
-        f"<span>CURRENCY: <b style='color:{TEXT};'>{ccy}</b></span>"
-        f"<span>ACTIVE: <b class='ok'>{active}</b></span>"
-        f"<span>ZEROED OUT: <b class='warn'>{zeroed}</b></span>"
-        f"<span>RFR: <b style='color:{TEXT};'>{r['rfr']:.1%}</b></span>"
-        f"<span>LOOKBACK: <b style='color:{TEXT};'>{r['lookback']}Y</b></span>"
-        f"<span class='ok'>STATUS: SOLVED ✓</span>"
-        f"</div>",
+        f"<div style='background:#040f20;border:1px solid #1e3a5f;border-radius:2px;"
+        f"padding:8px 14px;margin-bottom:12px;'>"
+        f"<div style='display:flex;flex-wrap:wrap;gap:24px;align-items:center;margin-bottom:5px;'>"
+        f"<span style='font-size:.875rem;'>"
+        f"STRATEGY: <b class='ok' style='font-size:.95rem;'>{strategy_label.upper()}</b></span>"
+        f"<span style='font-size:.875rem;'>"
+        f"ACTIVE POSITIONS: <b class='ok' style='font-size:.95rem;'>{active}</b></span>"
+        f"{zeroed_html}"
+        f"<span style='margin-left:auto;color:#39d353;font-size:.875rem;font-weight:700;'>"
+        f"◈ SOLVED ✓</span>"
+        f"</div>"
+        f"<div style='display:flex;flex-wrap:wrap;gap:20px;border-top:1px solid #132840;padding-top:5px;'>"
+        f"<span style='color:#9aabb8;font-size:.75rem;'>MODEL: <b style='color:{TEXT};'>{rm}</b></span>"
+        f"<span style='color:#9aabb8;font-size:.75rem;'>CCY: <b style='color:{TEXT};'>{ccy}</b></span>"
+        f"<span style='color:#9aabb8;font-size:.75rem;'>RFR: <b style='color:{TEXT};'>{r['rfr']:.1%}</b></span>"
+        f"<span style='color:#9aabb8;font-size:.75rem;'>LOOKBACK: <b style='color:{TEXT};'>{r['lookback']}Y</b></span>"
+        f"</div></div>",
         unsafe_allow_html=True,
     )
 
@@ -137,7 +264,7 @@ def render_optimizer(
         help="The largest peak-to-trough decline recorded in the portfolio over the lookback period — a measure of worst-case historical loss.",
     )
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top:12px;'></div>", unsafe_allow_html=True)
     col_c, col_t = st.columns([1.1, 0.9])
 
     with col_c:
@@ -152,14 +279,15 @@ def render_optimizer(
             labels=list(weights.keys()),
             values=list(weights.values()),
             hole=0.54,
-            texttemplate="<b>%{label}</b><br><b>%{percent:.1%}</b>",
-            textfont=dict(family="Courier New", size=12, color="#000000"),
+            texttemplate="<b>%{label}</b><br>%{percent:.1%}",
+            textfont=dict(family="'JetBrains Mono','Courier New',monospace", size=11, color="#ffffff"),
+            textposition="outside",
             marker=dict(colors=PALETTE[:len(weights)], line=dict(color=BG, width=3)),
             hovertemplate="<b>%{label}</b><br>Weight: %{percent:.1%}<extra></extra>",
         ))
         fig.add_annotation(
             text=f"<b>{center}</b>", x=0.5, y=0.5, showarrow=False,
-            font=dict(family="Courier New", size=10, color=ACCENT),
+            font=dict(family="'JetBrains Mono','Courier New',monospace", size=12, color=ACCENT),
         )
         fig.update_layout(**_pl(height=370, margin=dict(t=20, b=20, l=10, r=10)),
                           showlegend=True)
@@ -181,15 +309,17 @@ def render_optimizer(
             row["Wtd. Return"] = f"{r['expected_return'] * w:.2%}"
             rows.append(row)
         df = pd.DataFrame(rows)
+        st.markdown("<div style='overflow-x:auto;'>", unsafe_allow_html=True)
         st.dataframe(df, use_container_width=True, hide_index=True, height=300)
+        st.markdown("</div>", unsafe_allow_html=True)
         st.markdown(
-            f"<div style='color:#6b7a8d;font-size:.62rem;line-height:2;margin-top:8px;'>"
+            f"<div style='color:#9aabb8;font-size:.75rem;line-height:2;margin-top:8px;'>"
             f"COV MODEL &nbsp;&nbsp; LEDOIT-WOLF SHRINKAGE<br>"
             f"SOLVER &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CVXPY · CLARABEL<br>"
             f"PRICE DATA &nbsp; ADJ. CLOSE · {r['lookback']}Y LOOKBACK</div>",
             unsafe_allow_html=True,
         )
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top:12px;'></div>", unsafe_allow_html=True)
         csv_w = df.to_csv(index=False).encode("utf-8")
         st.markdown('<div class="qv-dl">', unsafe_allow_html=True)
         st.download_button(
@@ -242,14 +372,14 @@ def render_analytics(r: dict, ef_fn, stats_fn, mc_fn=None) -> None:
             name="Min Volatility",
             marker=dict(color=GREEN, size=10, symbol="diamond"),
             text=["MIN VOL"], textposition="top right",
-            textfont=dict(size=8, color=GREEN),
+            textfont=dict(size=11, color=GREEN),
         ))
         fig.add_trace(go.Scatter(
             x=[ms_vol], y=[ms_ret], mode="markers+text",
             name=f"Max Sharpe ({ms_sr:.2f})",
             marker=dict(color=ACCENT, size=14, symbol="star"),
             text=["MAX SHARPE"], textposition="top right",
-            textfont=dict(size=8, color=ACCENT),
+            textfont=dict(size=11, color=ACCENT),
         ))
         fig.add_trace(go.Scatter(
             x=[r["annual_volatility"]], y=[r["expected_return"]],
@@ -257,7 +387,7 @@ def render_analytics(r: dict, ef_fn, stats_fn, mc_fn=None) -> None:
             marker=dict(color="#ff6b6b", size=12, symbol="circle",
                         line=dict(color=TEXT, width=1.5)),
             text=["PORTFOLIO"], textposition="top right",
-            textfont=dict(size=8, color="#ff6b6b"),
+            textfont=dict(size=11, color="#ff6b6b"),
         ))
         fig.update_layout(
             **_pl(
@@ -266,7 +396,9 @@ def render_analytics(r: dict, ef_fn, stats_fn, mc_fn=None) -> None:
                 yaxis_title="Expected Return",
                 xaxis=dict(**_PL_BASE["xaxis"], tickformat=".0%"),
                 yaxis=dict(**_PL_BASE["yaxis"], tickformat=".0%"),
-            )
+                hovermode="closest",
+            ),
+            title=dict(text="EFFICIENT FRONTIER", font=dict(size=11, color=ACCENT), x=0.0),
         )
         st.plotly_chart(fig, use_container_width=True)
 
@@ -282,24 +414,24 @@ def render_analytics(r: dict, ef_fn, stats_fn, mc_fn=None) -> None:
             z=corr.values,
             x=corr.columns.tolist(),
             y=corr.index.tolist(),
-            colorscale=[[0.0, RED], [0.5, "#1a2a3a"], [1.0, ACCENT]],
+            colorscale=[[0.0, "#ef4444"], [0.5, "#1e3a5f"], [1.0, "#4ea8de"]],
             zmid=0, zmin=-1, zmax=1,
+            xgap=1, ygap=1,
             text=[[f"{v:.2f}" for v in row] for row in corr.values],
             texttemplate="%{text}",
-            textfont=dict(size=9, color=TEXT),
+            textfont=dict(size=11, color=TEXT),
             hovertemplate="<b>%{x} / %{y}</b><br>ρ = %{z:.3f}<extra></extra>",
             colorbar=dict(
-                thickness=12, len=0.8, tickfont=dict(size=8, color=TEXT),
+                thickness=12, len=0.8, tickfont=dict(size=11, color=TEXT),
                 bgcolor=PANEL, bordercolor=BORDER,
-                title=dict(text="ρ", font=dict(size=10, color=TEXT)),
+                title=dict(text="ρ", font=dict(size=12, color=TEXT)),
             ),
         ))
         fig2.update_layout(
             **_pl(
                 height=360,
-                margin=dict(t=32, b=36, l=60, r=20),
-                xaxis=dict(tickfont=dict(size=9), color=TEXT),
-                yaxis=dict(tickfont=dict(size=9), color=TEXT),
+                xaxis=dict(tickfont=dict(size=11), color=TEXT),
+                yaxis=dict(tickfont=dict(size=11), color=TEXT),
             )
         )
         st.plotly_chart(fig2, use_container_width=True)
@@ -326,7 +458,7 @@ def render_analytics(r: dict, ef_fn, stats_fn, mc_fn=None) -> None:
         x=rc_s.values, y=rc_s.index.tolist(), orientation="h",
         marker_color=PALETTE[:len(rc_s)],
         text=[f"{v:.2%}" for v in rc_s.values],
-        textposition="outside", textfont=dict(size=9, color=TEXT),
+        textposition="outside", textfont=dict(size=11, color=TEXT),
         hovertemplate="<b>%{y}</b><br>Risk Contrib: %{x:.2%}<extra></extra>",
     ))
     fig3.update_layout(
@@ -334,7 +466,9 @@ def render_analytics(r: dict, ef_fn, stats_fn, mc_fn=None) -> None:
             height=max(220, 60 + len(rc_s) * 34),
             xaxis_title="Marginal Contribution to Volatility",
             xaxis=dict(**_PL_BASE["xaxis"], tickformat=".1%"),
-        )
+        ),
+        title=dict(text="RISK ATTRIBUTION — MARGINAL CONTRIBUTION TO VOLATILITY",
+                   font=dict(size=11, color=ACCENT), x=0.0),
     )
     st.plotly_chart(fig3, use_container_width=True)
 
@@ -399,7 +533,7 @@ def render_analytics(r: dict, ef_fn, stats_fn, mc_fn=None) -> None:
                   hovermode="x unified"),
             title=dict(
                 text=f"MONTE CARLO — {n_sims:,} BOOTSTRAPPED SIMULATIONS · {horizon}Y HORIZON",
-                font=dict(size=10, color=ACCENT), x=0.0,
+                font=dict(size=11, color=ACCENT), x=0.0,
             ),
         )
         st.plotly_chart(fig_mc, use_container_width=True)
@@ -450,12 +584,42 @@ def render_backtest(r: dict, bt_fn) -> None:
     with st.spinner("Running backtest..."):
         bt = bt_fn(prices, tuple(sorted(weights.items())), bm_ticker or "")
 
+    port_total = float(bt["Portfolio"].iloc[-1]) / 100 - 1
+    bm_name = bt.columns[1] if len(bt.columns) > 1 else None
+    bm_total = float(bt[bm_name].iloc[-1]) / 100 - 1 if bm_name else None
+    alpha = port_total - bm_total if bm_total is not None else None
+
+    bk1, bk2, bk3, bk4 = st.columns(4)
+    bk1.metric(
+        "Portfolio Total Return", f"{port_total:.2%}",
+        help="Cumulative gain from the start to the end of the lookback period, using the optimised weights applied backward through history.",
+    )
+    if bm_name and bm_total is not None:
+        bk2.metric(
+            f"Benchmark ({bm_name})", f"{bm_total:.2%}",
+            help=f"Cumulative return for {bm_name} over the identical lookback window, for direct comparison.",
+        )
+        show_delta = alpha is not None and abs(alpha) >= 0.005
+        bk3.metric(
+            "Active Return (Alpha)", f"{alpha:.2%}",
+            delta=f"{alpha:.2%}" if show_delta else None,
+            delta_color="normal",
+            help="Portfolio Total Return minus Benchmark Return. Positive alpha means the optimised weights outperformed simply buying the index.",
+        )
+    bk4.metric(
+        "Max Drawdown", f"{r['max_drawdown']:.2%}",
+        help="The largest peak-to-trough decline in the portfolio over the full lookback period.",
+    )
+
+    st.markdown("<div style='margin-top:12px;'></div>", unsafe_allow_html=True)
     colors_bt = [ACCENT, "#4ea8de", GREEN, "#c084fc"]
     fig = go.Figure()
     for i, col in enumerate(bt.columns):
         is_port = col == "Portfolio"
         fig.add_trace(go.Scatter(
             x=bt.index, y=bt[col], mode="lines", name=col,
+            fill="tozeroy" if is_port else "none",
+            fillcolor="rgba(245,166,35,0.07)" if is_port else None,
             line=dict(color=colors_bt[i % len(colors_bt)],
                       width=2.5 if is_port else 1.8,
                       dash="solid" if is_port else "dash"),
@@ -465,29 +629,9 @@ def render_backtest(r: dict, bt_fn) -> None:
         **_pl(height=420, xaxis_title="Date", yaxis_title="Indexed to 100",
               hovermode="x unified"),
         title=dict(text="PORTFOLIO PERFORMANCE — INDEXED TO 100",
-                   font=dict(size=10, color=ACCENT), x=0.0),
+                   font=dict(size=11, color=ACCENT), x=0.0),
     )
     st.plotly_chart(fig, use_container_width=True)
-
-    port_total = float(bt["Portfolio"].iloc[-1]) / 100 - 1
-    bk1, bk2, bk3 = st.columns(3)
-    bk1.metric(
-        "Portfolio Total Return", f"{port_total:.2%}",
-        help="Cumulative gain from the start to the end of the lookback period, using the optimised weights applied backward through history.",
-    )
-    if len(bt.columns) > 1:
-        bm_name   = bt.columns[1]
-        bm_total  = float(bt[bm_name].iloc[-1]) / 100 - 1
-        alpha     = port_total - bm_total
-        bk2.metric(
-            f"Benchmark ({bm_name}) Return", f"{bm_total:.2%}",
-            help=f"Cumulative return for {bm_name} over the identical lookback window, for direct comparison.",
-        )
-        bk3.metric(
-            "Active Return (Alpha)", f"{alpha:.2%}",
-            delta=f"{alpha:.2%}", delta_color="normal",
-            help="Portfolio Total Return minus Benchmark Return. Positive alpha means the optimised weights outperformed simply buying the index.",
-        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -525,9 +669,11 @@ def render_holdings(r: dict, stats_fn, rb_fn=None) -> None:
     display["Sharpe"]          = display["Sharpe"].map(lambda x: f"{x:.3f}")
     display["Sortino"]         = display["Sortino"].map(lambda x: f"{x:.3f}")
     with ec1:
+        st.markdown("<div style='overflow-x:auto;'>", unsafe_allow_html=True)
         st.dataframe(display, use_container_width=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top:12px;'></div>", unsafe_allow_html=True)
     _titled(
         "SHARPE RATIO COMPARISON",
         "Ranks every asset by its individual Sharpe Ratio — excess return divided by volatility. "
@@ -541,11 +687,12 @@ def render_holdings(r: dict, stats_fn, rb_fn=None) -> None:
         x=sharpe_s.values, y=sharpe_s.index.tolist(), orientation="h",
         marker_color=bar_cols,
         text=[f"{v:.3f}" for v in sharpe_s.values],
-        textposition="outside", textfont=dict(size=9, color=TEXT),
+        textposition="outside", textfont=dict(size=11, color=TEXT),
         hovertemplate="<b>%{y}</b><br>Sharpe: %{x:.3f}<extra></extra>",
     ))
     fig4.update_layout(
         **_pl(height=max(200, 60 + len(sharpe_s) * 36), xaxis_title="Sharpe Ratio"),
+        title=dict(text="SHARPE RATIO BY ASSET", font=dict(size=11, color=ACCENT), x=0.0),
         shapes=[dict(type="line", x0=1.0, x1=1.0,
                      y0=-0.5, y1=len(sharpe_s) - 0.5,
                      line=dict(color=GREEN, width=1.5, dash="dot"))],
@@ -589,7 +736,7 @@ def render_holdings(r: dict, stats_fn, rb_fn=None) -> None:
                 y=drift_df["Drift"].values,
                 marker_color=drift_colors_bar,
                 text=[f"{v:+.2%}" for v in drift_df["Drift"].values],
-                textposition="outside", textfont=dict(size=9, color=TEXT),
+                textposition="outside", textfont=dict(size=11, color=TEXT),
                 customdata=list(zip(
                     drift_df["Target %"].map(lambda x: f"{x:.2%}"),
                     drift_df["Current %"].map(lambda x: f"{x:.2%}"),
@@ -624,7 +771,35 @@ def render_holdings(r: dict, stats_fn, rb_fn=None) -> None:
                 "Target % is the optimizer's recommended weight. Current % is where that position sits today after a year of price movement. "
                 "Drift is the gap — the amount you would need to trade to restore the optimal allocation.",
             )
-            st.dataframe(tbl, use_container_width=True)
+            _action_colors = {"BUY": GREEN, "SELL": RED, "HOLD": ACCENT}
+            def _rb_row(idx: str, r_: "pd.Series") -> str:
+                action = str(r_.get("Action", "HOLD"))
+                ac = _action_colors.get(action, TEXT)
+                badge = (
+                    f"<span style='color:{ac};border:1px solid {ac};border-radius:2px;"
+                    f"padding:1px 6px;font-size:.72rem;font-weight:700;letter-spacing:.08em;'>"
+                    f"{action}</span>"
+                )
+                cells = f"<td style='padding:6px 10px;color:{ACCENT};font-weight:600;border-bottom:1px solid #132840;'>{idx}</td>"
+                for col in ["Target %", "Current %", "Drift"]:
+                    val = r_.get(col, "")
+                    drift_color = GREEN if col == "Drift" and str(val).startswith("-") else RED if col == "Drift" and str(val).startswith("+") else TEXT
+                    cells += f"<td style='padding:6px 10px;color:{drift_color};border-bottom:1px solid #132840;text-align:right;white-space:nowrap;'>{val}</td>"
+                cells += f"<td style='padding:6px 10px;border-bottom:1px solid #132840;'>{badge}</td>"
+                return f"<tr>{cells}</tr>"
+
+            rb_hdr = "".join(
+                f"<th style='padding:6px 10px;color:#9aabb8;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;border-bottom:2px solid #1e3a5f;text-align:left;'>{c}</th>"
+                for c in ["Ticker", "Target %", "Current %", "Drift", "Action"]
+            )
+            rb_body = "".join(_rb_row(idx, row_) for idx, row_ in tbl.iterrows())
+            st.markdown(
+                f"<div style='overflow-x:auto;'><table style='width:100%;border-collapse:collapse;"
+                f"font-family:\"JetBrains Mono\",\"Courier New\",monospace;font-size:.8rem;"
+                f"background:#040f20;border:1px solid #1e3a5f;border-radius:2px;'>"
+                f"<thead><tr>{rb_hdr}</tr></thead><tbody>{rb_body}</tbody></table></div>",
+                unsafe_allow_html=True,
+            )
 
     # ── Trading History ────────────────────────────────────────────────────────
     st.markdown("---")
@@ -720,7 +895,38 @@ def render_holdings(r: dict, stats_fn, rb_fn=None) -> None:
             "Cost Basis is the total amount paid (Qty × Buy Price). Current Value is what that position is worth at the latest closing price. "
             "P&amp;L ($) and P&amp;L (%) show your unrealised gain or loss — positive means the position is in profit.",
         )
-        st.dataframe(pnl_df, use_container_width=True, hide_index=True)
+
+        def _pnl_color(val: str) -> str:
+            if val.startswith("+") or (val.startswith("$+") if val.startswith("$") else False):
+                return GREEN
+            if val.startswith("-") or (val.startswith("$-") if val.startswith("$") else False):
+                return RED
+            if val == "N/A":
+                return "#5a6a7a"
+            return TEXT
+
+        _pnl_cols = ["P&L ($)", "P&L (%)"]
+        def _render_pnl_row(r_: dict) -> str:
+            cells = ""
+            for col, val in r_.items():
+                color = _pnl_color(str(val)) if col in _pnl_cols else TEXT
+                fw = "600" if col in _pnl_cols and str(val) not in ("N/A", "—") else "400"
+                cells += f"<td style='padding:6px 10px;color:{color};font-weight:{fw};border-bottom:1px solid #132840;white-space:nowrap;'>{val}</td>"
+            return f"<tr>{cells}</tr>"
+
+        hdr = "".join(
+            f"<th style='padding:6px 10px;color:#9aabb8;font-size:.75rem;text-transform:uppercase;"
+            f"letter-spacing:.08em;border-bottom:2px solid #1e3a5f;white-space:nowrap;text-align:left;'>{c}</th>"
+            for c in pnl_df.columns
+        )
+        body = "".join(_render_pnl_row(r_.to_dict()) for _, r_ in pnl_df.iterrows())
+        st.markdown(
+            f"<div style='overflow-x:auto;'><table style='width:100%;border-collapse:collapse;"
+            f"font-family:\"JetBrains Mono\",\"Courier New\",monospace;font-size:.8rem;"
+            f"background:#040f20;border:1px solid #1e3a5f;border-radius:2px;'>"
+            f"<thead><tr>{hdr}</tr></thead><tbody>{body}</tbody></table></div>",
+            unsafe_allow_html=True,
+        )
 
         # ── Holdings → Rebalancing feed-in ────────────────────────────────────
         use_holdings = st.toggle(
