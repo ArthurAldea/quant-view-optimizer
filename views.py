@@ -699,11 +699,13 @@ def render_backtest(r: dict, bt_fn) -> None:
         ax=40, ay=-30,
     )
     fig_dd.update_layout(
-        **_pl(height=240, xaxis_title="Date", yaxis_title="Drawdown (%)",
-              hovermode="x unified"),
+        **_pl(
+            height=240, hovermode="x unified",
+            xaxis_title="Date",
+            yaxis=dict(**_PL_BASE["yaxis"], title="Drawdown (%)", ticksuffix="%"),
+        ),
         title=dict(text="PORTFOLIO DRAWDOWN FROM PEAK",
                    font=dict(size=11, color=ACCENT), x=0.0),
-        yaxis=dict(**_PL_BASE["yaxis"], ticksuffix="%"),
     )
     st.plotly_chart(fig_dd, use_container_width=True)
 
@@ -741,7 +743,7 @@ def render_backtest(r: dict, bt_fn) -> None:
         hoverinfo="text",
     ))
     fig_c.update_layout(
-        **_pl(height=340, xaxis_title="Month", yaxis_title="Indexed to 100"),
+        **_pl(height=340, xaxis_title="Date", yaxis_title="Indexed to 100"),
         xaxis_rangeslider_visible=False,
         title=dict(text="MONTHLY OHLC — PORTFOLIO INDEXED TO 100",
                    font=dict(size=11, color=ACCENT), x=0.0),
