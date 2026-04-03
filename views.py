@@ -945,7 +945,7 @@ def render_holdings(r: dict, stats_fn, rb_fn=None) -> None:
     )
 
     default_trade_cols = {
-        "Date": pd.Series(dtype="str"),
+        "Date": pd.Series(dtype="object"),
         "Ticker": pd.Series(dtype="str"),
         "Qty": pd.Series(dtype="float"),
         "Buy Price": pd.Series(dtype="float"),
