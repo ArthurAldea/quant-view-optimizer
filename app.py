@@ -199,8 +199,8 @@ def _run_opt(
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
-def _run_ef(prices: pd.DataFrame, rfr: float) -> dict:
-    return efficient_frontier(prices, rfr)
+def _run_ef(prices: pd.DataFrame, rfr: float, returns_model: str = "mean_historical", lookback_years: int = 10) -> dict:
+    return efficient_frontier(prices, rfr, returns_model=returns_model, lookback_years=lookback_years)
 
 
 @st.cache_data(ttl=3600, show_spinner=False)

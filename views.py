@@ -395,7 +395,7 @@ def render_analytics(r: dict, ef_fn, stats_fn, mc_fn=None) -> None:
             "Your optimised portfolio is plotted in red.",
         )
         with st.spinner("Computing frontier points..."):
-            ef = ef_fn(prices, rfr_v)
+            ef = ef_fn(prices, rfr_v, r.get("returns_model", "mean_historical"), r.get("lookback", 10))
 
         ms_vol, ms_ret, ms_sr = ef["max_sharpe"]
         mv_vol, mv_ret        = ef["min_vol"]

@@ -231,10 +231,12 @@ def optimise(
     else:
         ef.max_sharpe(risk_free_rate=rfr)
 
-    weights = ef.clean_weights()
+    # Cutoff below weight_min so constrained weights aren't zeroed and renormalized
+    clean_cutoff = min(weight_min * 0.5, 1e-4) if weight_min > 0 else 1e-4
+    weights = ef.clean_weights(cutoff=clean_cutoff)
     exp_ret, ann_vol, sharpe = ef.portfolio_performance(risk_free_rate=rfr)
 
-    rets = prices.pct_change().dropna()
+    rets = prices_opt.pct_change().dropna()
     w_arr = np.array([weights.get(t, 0.0) for t in rets.columns])
     p_rets = rets.values @ w_arr
     cum = np.cumprod(1 + p_rets)
@@ -256,10 +258,16 @@ def optimise(
     }
 
 
-def efficient_frontier(prices: pd.DataFrame, rfr: float = RISK_FREE_RATE, n: int = 40) -> dict:
+def efficient_frontier(
+    prices: pd.DataFrame,
+    rfr: float = RISK_FREE_RATE,
+    n: int = 40,
+    returns_model: str = "mean_historical",
+    lookback_years: int = LOOKBACK_YEARS,
+) -> dict:
     """Compute EF curve, min-vol anchor, and max-Sharpe anchor."""
-    mu = expected_returns.mean_historical_return(prices)
-    S = CovarianceShrinkage(prices).ledoit_wolf()
+    mu, prices_ef = _compute_mu(prices, returns_model, rfr, lookback_years)
+    S = CovarianceShrinkage(prices_ef).ledoit_wolf()
 
     ef_mv = EfficientFrontier(mu, S)
     ef_mv.min_volatility()
